@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.bak.*
+*.log
+.DS_Store
+.data/
+test-results/
+customer.config.json

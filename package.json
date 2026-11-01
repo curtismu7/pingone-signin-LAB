@@ -1,0 +1,33 @@
+{
+  "name": "pingone-signin-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline mock PingOne pi.flow sign-in lab: drive a flow step by step, watch the session-token cookie rotate, and see PKCE, replay, lockout, step-up (RFC 9470) and CIBA behave. Mock only, no tenant, no outbound network.",
+  "license": "MIT",
+  "workspaces": [
+    "core",
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "start": "npm start -w server",
+    "build": "npm run build -w web",
+    "dev": "echo \"run: npm run dev -w server  and  npm run dev -w web (UI on http://localhost:6173/)\"",
+    "test": "npm test -w core && npm test -w server && npm test -w web && node --test scripts/*.test.mjs",
+    "e2e": "npm run build && playwright test -c e2e/playwright.config.js",
+    "doctor": "node scripts/doctor.mjs",
+    "reset": "node scripts/reset.mjs",
+    "content-pack": "node scripts/build-content-pack.mjs && node scripts/validate-content-pack.mjs",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "talk-track": "node scripts/build-talk-track.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1"
+  }
+}

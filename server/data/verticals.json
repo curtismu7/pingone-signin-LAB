@@ -1,0 +1,5 @@
+[
+  {"id": "travel", "name": "Travel", "cast": {"plain": "mark", "strong": "dana", "multi": "priya"}, "vocab": {"org": "Mock Air", "action": "booking change", "resource": "booking"}},
+  {"id": "banking", "name": "Banking", "cast": {"plain": "alice", "strong": "ravi", "multi": "noah"}, "vocab": {"org": "Mock Bank", "action": "transfer", "resource": "account"}},
+  {"id": "healthcare", "name": "Healthcare", "cast": {"plain": "lena", "strong": "omar", "multi": "sana"}, "vocab": {"org": "Mock Clinic", "action": "prescription refill", "resource": "patient record"}}
+]

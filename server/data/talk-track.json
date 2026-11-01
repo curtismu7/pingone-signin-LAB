@@ -1,0 +1,29 @@
+{
+  "title": "Talk track (about eight minutes in the terminal; the same story in the UI is below)",
+  "sections": [
+    {
+      "heading": null,
+      "steps": [
+        "`npm run doctor`, then `npm start`. Say: offline, loopback, nothing leaves the machine.",
+        "`curl` the authorize URL from the README **without** `response_mode=pi.flow`: refused, no cookie. Then with it: JSON and a cookie. Point out there is no browser redirect.",
+        "`POST /api/run {\"scenario\":\"happy-path\"}`: four calls. Read the trace titles and notes.",
+        "`stale-cookie-resume`: the cookie changes at every step; an old one cannot resume.",
+        "`wrong-verifier` and `replayed-code`: the code is bound to PKCE and single use.",
+        "`step-up-low-acr`: 401 with the RFC 9470 challenge, re-authorize with `acr_values`, 200. The acr names are mock.",
+        "`ciba-approve`, `ciba-slow-down`, `ciba-binding-too-long`: backchannel in three stories.",
+        "`POST /api/run-all`: everything behaves as written. `POST /api/reset` to start clean."
+      ]
+    },
+    {
+      "heading": "In the UI (http://localhost:6171/)",
+      "steps": [
+        "Point at the header: `MOCK: offline, no tenant`, and the Mock | Live toggle (Live is refused here: there is no tenant behind this lab). Open **Sign in**, press Open the flow, sign in as mark (Use fills the form), then Resume and Exchange. Watch the trace: JSON not a redirect, and the cookie preview changes at every step. Read `acr`, `amr`, `auth_time` and the nonce match.",
+        "Wrong password once, then lockout with dana: the attempt counter and `ACCOUNT_LOCKED`.",
+        "**Step-up**: low acr, the 401 challenge parsed on screen, re-authorize, retry 200. The acr names are mock.",
+        "**CIBA**: type a binding message and watch the counter (8 is a mock limit). Approve on the mock phone and poll; then deny; press Poll now twice for `slow_down`.",
+        "**Scenarios**: Run all, 16 of 16. **Diagram**: Simulate the three flows at 2x, drag a box, Reset.",
+        "Light and dark, then Reset lab. Press P for presenter mode (Esc leaves it; the simulation banner stays)."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "schema": "diagram-studio/1",
+  "id": "pingone-signin-ciba",
+  "title": "CIBA (backchannel)",
+  "lede": "CIBA backchannel sign-in: the user approves on a mock phone while the BFF polls. Mock only.",
+  "groups": {
+    "user": {
+      "label": "User side",
+      "color": "dark"
+    },
+    "app": {
+      "label": "Your app (BFF)",
+      "color": "blue"
+    },
+    "idp": {
+      "label": "Identity provider (mock)",
+      "color": "red"
+    },
+    "api": {
+      "label": "Resource server (mock)",
+      "color": "grey"
+    }
+  },
+  "nodes": [
+    {
+      "id": "browser",
+      "group": "user",
+      "label": "Browser",
+      "sub": [
+        "The user's page and form."
+      ],
+      "x": 0,
+      "y": 70
+    },
+    {
+      "id": "bff",
+      "group": "app",
+      "label": "BFF",
+      "sub": [
+        "Holds the PKCE verifier and the session-token cookie. In this lab the page plays this part."
+      ],
+      "x": 330,
+      "y": 40
+    },
+    {
+      "id": "op",
+      "group": "idp",
+      "label": "Mock PingOne",
+      "sub": [
+        "Issues flows, codes and mock tokens. Not a real tenant."
+      ],
+      "x": 660,
+      "y": 40
+    },
+    {
+      "id": "rs",
+      "group": "api",
+      "label": "Resource server",
+      "sub": [
+        "Mock. Demands acr mock:multi for a transfer."
+      ],
+      "x": 330,
+      "y": 340
+    },
+    {
+      "id": "phone",
+      "group": "user",
+      "label": "Mock phone",
+      "sub": [
+        "Stands in for the user's device (CIBA)."
+      ],
+      "x": 660,
+      "y": 340
+    }
+  ],
+  "edges": [
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "POST /bc-authorize"
+    },
+    {
+      "source": "op",
+      "target": "phone",
+      "label": "push to phone",
+      "dashed": true
+    },
+    {
+      "source": "phone",
+      "target": "op",
+      "label": "approve or deny",
+      "dashed": true
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "poll POST /token"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "tokens"
+    },
+    {
+      "source": "bff",
+      "target": "browser",
+      "label": "signed in",
+      "dashed": true
+    }
+  ],
+  "steps": [
+    {
+      "title": "Start the request",
+      "what": "POST /bc-authorize with login_hint and a binding_message of at most 8 characters (mock limit). The answer carries auth_req_id and an interval.",
+      "edges": [
+        0
+      ]
+    },
+    {
+      "title": "Notify the phone",
+      "what": "The mock pushes a notification to the user's phone, showing the binding message.",
+      "edges": [
+        1
+      ]
+    },
+    {
+      "title": "The user answers",
+      "what": "The user taps Approve or Deny on the mock phone (POST /phone/approve or /phone/deny).",
+      "edges": [
+        2
+      ]
+    },
+    {
+      "title": "Poll for the answer",
+      "what": "The BFF polls POST /token with the CIBA grant. Until the user answers: authorization_pending. Too fast: slow_down. After denial: access_denied. After the deadline: expired_token.",
+      "edges": [
+        3
+      ]
+    },
+    {
+      "title": "Tokens once approved",
+      "what": "Once approved, the poll returns the tokens.",
+      "edges": [
+        4
+      ]
+    },
+    {
+      "title": "Signed in",
+      "what": "The BFF tells the browser the user is signed in. The browser never saw the approval.",
+      "edges": [
+        5
+      ]
+    }
+  ]
+}

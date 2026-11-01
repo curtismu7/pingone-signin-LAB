@@ -1,0 +1,166 @@
+{
+  "schema": "diagram-studio/1",
+  "id": "pingone-signin-login",
+  "title": "Sign in (pi.flow)",
+  "lede": "The embedded pi.flow sign-in: authorize, password, optional MFA, resume, token. Mock PingOne, not a real tenant.",
+  "groups": {
+    "user": {
+      "label": "User side",
+      "color": "dark"
+    },
+    "app": {
+      "label": "Your app (BFF)",
+      "color": "blue"
+    },
+    "idp": {
+      "label": "Identity provider (mock)",
+      "color": "red"
+    },
+    "api": {
+      "label": "Resource server (mock)",
+      "color": "grey"
+    }
+  },
+  "nodes": [
+    {
+      "id": "browser",
+      "group": "user",
+      "label": "Browser",
+      "sub": [
+        "The user's page and form."
+      ],
+      "x": 0,
+      "y": 70
+    },
+    {
+      "id": "bff",
+      "group": "app",
+      "label": "BFF",
+      "sub": [
+        "Holds the PKCE verifier and the session-token cookie. In this lab the page plays this part."
+      ],
+      "x": 330,
+      "y": 40
+    },
+    {
+      "id": "op",
+      "group": "idp",
+      "label": "Mock PingOne",
+      "sub": [
+        "Issues flows, codes and mock tokens. Not a real tenant."
+      ],
+      "x": 660,
+      "y": 40
+    },
+    {
+      "id": "rs",
+      "group": "api",
+      "label": "Resource server",
+      "sub": [
+        "Mock. Demands acr mock:multi for a transfer."
+      ],
+      "x": 330,
+      "y": 340
+    },
+    {
+      "id": "phone",
+      "group": "user",
+      "label": "Mock phone",
+      "sub": [
+        "Stands in for the user's device (CIBA)."
+      ],
+      "x": 660,
+      "y": 340
+    }
+  ],
+  "edges": [
+    {
+      "source": "browser",
+      "target": "bff",
+      "label": "form values",
+      "dashed": true
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "GET /authorize (pi.flow, PKCE)"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "POST /flows/{id}"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "device + one-time passcode"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "GET /resume"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "POST /token"
+    },
+    {
+      "source": "bff",
+      "target": "browser",
+      "label": "signed in",
+      "dashed": true
+    }
+  ],
+  "steps": [
+    {
+      "title": "The form goes to the BFF",
+      "what": "The user fills in the embedded form. The browser hands the values to the BFF; there is no redirect to a hosted login page.",
+      "edges": [
+        0
+      ]
+    },
+    {
+      "title": "Start the flow",
+      "what": "GET /authorize with response_mode=pi.flow, PKCE S256, state and nonce. The answer is JSON: a flow in USERNAME_PASSWORD_REQUIRED and an ST cookie.",
+      "edges": [
+        1
+      ]
+    },
+    {
+      "title": "Send the password",
+      "what": "POST /flows/{id} with the password. The status moves on and the ST cookie is replaced.",
+      "edges": [
+        2
+      ]
+    },
+    {
+      "title": "MFA when demanded",
+      "what": "Only when MFA is demanded: pick a device, then post the one-time passcode. The cookie rotates again at each step.",
+      "edges": [
+        3
+      ]
+    },
+    {
+      "title": "Resume",
+      "what": "GET /resume with the current cookie. A stale cookie is refused. The mock answers with an authorization code (UNVERIFIED for a real PingOne).",
+      "edges": [
+        4
+      ]
+    },
+    {
+      "title": "Exchange the code",
+      "what": "POST /token with the code and the PKCE verifier. The mock answers with id_token and access_token carrying acr, amr, auth_time and nonce.",
+      "edges": [
+        5
+      ]
+    },
+    {
+      "title": "Signed in",
+      "what": "The BFF tells the browser the user is signed in.",
+      "edges": [
+        6
+      ]
+    }
+  ]
+}

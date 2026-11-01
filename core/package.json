@@ -1,0 +1,10 @@
+{
+  "name": "pingone-piflow-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mock PingOne pi.flow sign-in engine, client-side driver, RFC 9470 step-up helpers and CIBA mock. Pure: no express, no network.",
+  "license": "MIT",
+  "exports": { ".": "./src/index.js" },
+  "scripts": { "test": "node --test test/*.test.js" }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Contoso Air",
+  "vertical": "travel",
+  "vocabulary": {
+    "action": "seat change",
+    "resource": "booking"
+  },
+  "brand": {
+    "primary": "#0b6bcb"
+  }
+}

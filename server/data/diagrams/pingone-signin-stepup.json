@@ -1,0 +1,153 @@
+{
+  "schema": "diagram-studio/1",
+  "id": "pingone-signin-stepup",
+  "title": "Step-up (RFC 9470)",
+  "lede": "A resource server challenges a low-acr token (RFC 9470); the BFF runs a stronger sign-in and retries. Mock acr names.",
+  "groups": {
+    "user": {
+      "label": "User side",
+      "color": "dark"
+    },
+    "app": {
+      "label": "Your app (BFF)",
+      "color": "blue"
+    },
+    "idp": {
+      "label": "Identity provider (mock)",
+      "color": "red"
+    },
+    "api": {
+      "label": "Resource server (mock)",
+      "color": "grey"
+    }
+  },
+  "nodes": [
+    {
+      "id": "browser",
+      "group": "user",
+      "label": "Browser",
+      "sub": [
+        "The user's page and form."
+      ],
+      "x": 0,
+      "y": 70
+    },
+    {
+      "id": "bff",
+      "group": "app",
+      "label": "BFF",
+      "sub": [
+        "Holds the PKCE verifier and the session-token cookie. In this lab the page plays this part."
+      ],
+      "x": 330,
+      "y": 40
+    },
+    {
+      "id": "op",
+      "group": "idp",
+      "label": "Mock PingOne",
+      "sub": [
+        "Issues flows, codes and mock tokens. Not a real tenant."
+      ],
+      "x": 660,
+      "y": 40
+    },
+    {
+      "id": "rs",
+      "group": "api",
+      "label": "Resource server",
+      "sub": [
+        "Mock. Demands acr mock:multi for a transfer."
+      ],
+      "x": 330,
+      "y": 340
+    },
+    {
+      "id": "phone",
+      "group": "user",
+      "label": "Mock phone",
+      "sub": [
+        "Stands in for the user's device (CIBA)."
+      ],
+      "x": 660,
+      "y": 340
+    }
+  ],
+  "edges": [
+    {
+      "source": "browser",
+      "target": "bff",
+      "label": "transfer request",
+      "dashed": true
+    },
+    {
+      "source": "bff",
+      "target": "rs",
+      "label": "POST /rs/transfer: 401 + challenge"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "new pi.flow with acr_values"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "password + MFA"
+    },
+    {
+      "source": "bff",
+      "target": "op",
+      "label": "resume + token"
+    },
+    {
+      "source": "bff",
+      "target": "rs",
+      "label": "POST /rs/transfer: 200"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Ask for a transfer",
+      "what": "The user asks for a transfer.",
+      "edges": [
+        0
+      ]
+    },
+    {
+      "title": "The challenge",
+      "what": "POST /rs/transfer with the low-acr token. The resource server answers 401 and a WWW-Authenticate challenge with acr_values (mock names) and max_age.",
+      "edges": [
+        1
+      ]
+    },
+    {
+      "title": "Open a stronger flow",
+      "what": "The BFF opens a new pi.flow with the challenge's acr_values and max_age.",
+      "edges": [
+        2
+      ]
+    },
+    {
+      "title": "Password and MFA",
+      "what": "Password, then device and one-time passcode, because mock:multi was asked for.",
+      "edges": [
+        3
+      ]
+    },
+    {
+      "title": "New token",
+      "what": "Resume and token exchange. The new token has acr mock:multi and a fresh auth_time.",
+      "edges": [
+        4
+      ]
+    },
+    {
+      "title": "Retry the transfer",
+      "what": "POST /rs/transfer again with the new token. 200.",
+      "edges": [
+        5
+      ]
+    }
+  ]
+}
