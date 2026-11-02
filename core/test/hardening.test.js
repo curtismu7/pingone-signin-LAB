@@ -9,7 +9,7 @@ const q = (over = {}) => ({ client_id: 'lab-app', redirect_uri: 'https://app.lab
 
 test('handle() never throws: odd inputs give a JSON answer', () => {
   const op = createMockOP();
-  for (const req of [{}, { path: '/flows/%zz' }, { path: '/flows/%' }, { path: '/flows/%E0%A4%A', method: 'POST' }, { method: 'POST', path: '/token', body: null }, { path: '/authorize', query: null }, { path: '/resume', query: { flowId: ['a', 'b'] } }]) {
+  for (const req of [{}, { path: '/flows/%zz' }, { path: '/flows/%' }, { path: '/flows/%E0%A4%A', method: 'POST' }, { method: 'POST', path: '/token', body: null }, { path: '/authorize', query: null }, { path: '/as/resume', query: { flowId: ['a', 'b'] } }, { path: '/as/resume', query: { flowId: {} } }, { path: '/as/resume', query: null }]) {
     const r = op.handle(req);
     assert.ok(r.status >= 200 && r.status < 600 && r.body, JSON.stringify(req));
   }

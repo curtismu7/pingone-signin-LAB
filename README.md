@@ -6,7 +6,7 @@ Tier: Demo
 Repo: https://github.com/ping-sandbox/pingone-signin-LAB
 Catalog: A11
 
-Catalog note: `A11` (the pi.flow native sign-in kit) is this lab's catalog id. `A5` (step-up, RFC 9470) and `A4` (the CIBA stations) are real catalog rows with this lab as their home (owner decision); they are also listed as tags in the content pack. This build did not re-check the rows against a published catalog.
+Catalog note: `A11` (the pi.flow native sign-in kit) is this lab's catalog id. `A5` (Step-up auth, RFC 9470) and `A4` (CIBA lab) are real catalog rows with this lab as their home (owner decision); they are also listed as tags in the content pack. This build did not re-check the rows against a published catalog.
 
 ## What is simulated
 
@@ -22,7 +22,7 @@ The banner above every tab says the same, also in presenter mode.
 
 1. `GET /mock/authorize` with `response_mode=pi.flow` (PKCE S256, state, nonce) answers with JSON, not a redirect: a flow `{id, status: USERNAME_PASSWORD_REQUIRED, _links}` and a session-token cookie `ST`.
 2. `POST /mock/flows/{id}` with a `vnd.pingidentity` content type checks the password (then, when the user or the requested acr demands it, a device and a one-time passcode). The cookie **rotates on every step**.
-3. The status is now `COMPLETED`, which carries a `resumeUrl`. `GET /mock/as/resume?flowId=` needs the **current** cookie (a lab rule) and answers `{ authorizeResponse: { code, state } }`, with a code bound to the PKCE challenge.
+3. The status is now `COMPLETED`; this lab also adds a `resumeUrl` link to the flow (a lab detail, UNVERIFIED against PingOne). `GET /mock/as/resume?flowId=` needs the **current** cookie (a lab rule) and answers `{ authorizeResponse: { code, state } }`, with a code bound to the PKCE challenge.
 4. `POST /mock/token` swaps code + verifier for HS256-signed `id_token` / `access_token` carrying `acr`, `amr`, `auth_time`, `sub`, `nonce`.
 5. Step-up (RFC 9470): the mock resource server answers `401 WWW-Authenticate: Bearer error="insufficient_user_authentication", acr_values=..., max_age=...`; re-authorizing with those values forces MFA and a fresh `auth_time`.
 6. CIBA: `POST /mock/bc-authorize`, poll `POST /mock/token`, and a mock phone that approves or denies.

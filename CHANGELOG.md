@@ -4,7 +4,7 @@
 
 This lab and `pingone-LAB` stay separate (owner decision): this one teaches how a PingOne-style sign-in behaves (failures, lockout, replay, MFA, step-up, CIBA with a mock phone), mock only; `pingone-LAB` holds the real PingOne shapes and live use.
 
-- README, `CLAUDE.md`, the content pack and the shelf entry state the sharper scope and point at `pingone-LAB`. `A5` (step-up) and `A4` (CIBA stations) are real catalog rows with this lab as their home; A11 stays the catalog id.
+- README, `CLAUDE.md`, the content pack and the shelf entry state the sharper scope and point at `pingone-LAB`. `A5` (Step-up auth) and `A4` (CIBA lab) are real catalog rows with this lab as their home; A11 stays the catalog id.
 - The mock's shared pi.flow shapes now match the ones `pingone-LAB` saw on a real PingOne run: a good password ends in `COMPLETED` (the invented `RESUME_REQUIRED` is gone), the code comes from `GET /as/resume?flowId=` (was `/resume`) as `{ authorizeResponse: { code, state } }`, and a wrong password is a `400` with `details[].code` `INVALID_CREDENTIALS`. The lockout rule, passcode 424242, cookie rotation, acr names, step-up demand and CIBA phone are unchanged and labelled lab inventions in `docs/architecture.md` and the UI trace.
 - The Live refusal names `pingone-LAB`. The Resume button is now `Resume (GET /as/resume)` and stays disabled until the flow is `COMPLETED`.
 - `docs/shelf-entry.json` is one flat object in the committed shelf format (it was wrapped in a `demos` array); a test pins the description to 300 characters or fewer.

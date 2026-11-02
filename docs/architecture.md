@@ -15,14 +15,14 @@ core/ (pure)                         server/ (Express)
 
 ```
 authorize(pi.flow) -> USERNAME_PASSWORD_REQUIRED
-  password ok, no MFA            -> COMPLETED (+ resumeUrl)
+  password ok, no MFA            -> COMPLETED (+ resumeUrl, a lab detail)
   password ok, MFA, >1 device    -> DEVICE_SELECTION_REQUIRED -> OTP_REQUIRED -> COMPLETED
   password ok, MFA, 1 device     -> OTP_REQUIRED -> COMPLETED
   GET /as/resume (current cookie) on a COMPLETED flow -> { authorizeResponse: { code, state } }; the flow is then spent
   too many wrong OTPs / no device for a demanded acr -> FAILED
 ```
 
-COMPLETED means the sign-in is done; the code is fetched in a separate call to `resumeUrl`. A flow that was resumed is single use: any later flow or resume call is `400 FLOW_ALREADY_COMPLETED`.
+COMPLETED means the sign-in is done; the code is fetched in a separate `GET /as/resume` call (this lab also puts a `resumeUrl` link on the flow; that link is a lab detail, UNVERIFIED against PingOne). A flow that was resumed is single use: any later flow or resume call is `400 FLOW_ALREADY_COMPLETED`.
 
 ### Shapes shared with pingone-LAB, and what is only this lab's
 

@@ -3,6 +3,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { hold, jsonResponse, startFakeServer } from "./fakeServer.js";
 import { open, status, enabled } from "./helpers.jsx";
+import { PiFlowClient } from "../lib/flow.js";
+import { createTracer } from "../lib/trace.js";
 
 // The controls are always on screen, greyed out until their step is ready, so wait for enabled ones.
 const enabledField = (label) => waitFor(() => { const f = screen.getByLabelText(label); expect(f).toBeEnabled(); return f; });
@@ -21,6 +23,15 @@ async function login(user, name, pw = "mock-password") {
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 }
 
+describe("PiFlowClient", () => {
+  it("a full sign-in reads the state from authorizeResponse, so stateOk and nonceOk are true", async () => {
+    const r = await new PiFlowClient({ tracer: createTracer(), redirectUri: "https://app.lab.example/callback" }).run({ username: "mark", password: "mock-password" });
+    expect(r.ok).toBe(true);
+    expect(r.stateOk).toBe(true);
+    expect(r.nonceOk).toBe(true);
+  });
+});
+
 describe("Sign in tab", () => {
   it("shows the seeded users with their mock password, labelled fictional", async () => {
     await open();
@@ -38,6 +49,7 @@ describe("Sign in tab", () => {
     expect(screen.getByRole("button", { name: /Exchange the code/ })).toHaveAttribute("aria-disabled", "true");
     await user.click(screen.getByRole("button", { name: /Resume/ }));
     await waitFor(() => expect(screen.getByRole("button", { name: /Exchange the code/ })).not.toHaveAttribute("aria-disabled", "true"));
+    expect(screen.getByRole("button", { name: /Resume/ })).toHaveAttribute("aria-disabled", "true"); // the code is fetched: a second resume would be refused
     await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
     const tokens = await screen.findByTestId("tokens");
     expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:single");

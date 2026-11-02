@@ -17,7 +17,7 @@ export function buildPack() {
     title: 'PingOne Sign-in LAB (mock)',
     version,
     demo: {
-      id: 'pingone-signin-lab', name: 'PingOne Sign-in LAB', catalog: 'A11', // pi.flow native sign-in kit; A5 (step-up) and A4 (CIBA stations) are real catalog rows with this lab as their home, listed in tags
+      id: 'pingone-signin-lab', name: 'PingOne Sign-in LAB', catalog: 'A11', // pi.flow native sign-in kit; A5 (Step-up auth) and A4 (CIBA lab) are real catalog rows with this lab as their home, listed in tags
       baseUrl: 'http://localhost:6171', doctor: '/api/health', tags: ['pi.flow', 'step-up', 'rfc-9470', 'ciba', 'mfa', 'mock', 'catalog-A4', 'catalog-A5'],
     },
     glossary: [
