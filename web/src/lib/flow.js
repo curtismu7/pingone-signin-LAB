@@ -1,5 +1,6 @@
 // The client side of pi.flow, in the page: the part a BFF would run. Every call goes through the tracer.
-// MOCK vendor content types and statuses: modelled on the public sample apps, details UNVERIFIED against a real PingOne.
+// MOCK vendor content types and statuses. COMPLETED, GET /as/resume and INVALID_CREDENTIALS follow pingone-LAB (seen on a real PingOne run);
+// the rest is modelled on the public sample apps, UNVERIFIED against a real PingOne.
 import { newPkce } from "./pkce.js";
 import { decodeJwt } from "./jwt.js";
 
@@ -35,18 +36,18 @@ export class PiFlowClient {
   async submit(kind, body, note = "") {
     const r = await this.tracer.call(`${TITLES[kind]}: POST /flows/{id}`, {
       method: "POST", path: `${BASE}/flows/${this.flow?.id ?? "none"}`, headers: { "content-type": MT[kind] }, body: JSON.stringify(body),
-      note: note || "The session-token cookie rotates on every step: compare the set-cookie preview of this call with the one before.",
+      note: note || "Lab invention (UNVERIFIED against PingOne): the session-token cookie rotates on every step. Compare the set-cookie preview of this call with the one before.",
     });
     if (r.json && r.json.id && r.json.status) this.flow = r.json;
     return r;
   }
 
   async resume(note = "") {
-    const r = await this.tracer.call("Resume: GET /resume?flowId=", {
-      path: `${BASE}/resume?flowId=${this.flow?.id ?? "none"}`,
-      note: note || "Needs the CURRENT session-token cookie. UNVERIFIED: a real PingOne may answer with a redirect instead of this JSON.",
+    const r = await this.tracer.call("Resume: GET /as/resume?flowId=", {
+      path: `${BASE}/as/resume?flowId=${this.flow?.id ?? "none"}`,
+      note: note || "Needs the CURRENT session-token cookie (a lab rule, UNVERIFIED). UNVERIFIED: a real PingOne may answer with a redirect instead of this JSON (authorizeResponse is pingone-LAB's mock shape).",
     });
-    if (r.status === 200) { this.code = r.json.code; this.state = r.json.state; }
+    if (r.status === 200) { this.code = r.json.authorizeResponse.code; this.state = r.json.authorizeResponse.state; }
     return r;
   }
 
@@ -78,7 +79,7 @@ export class PiFlowClient {
       const o = await this.submit("otp", { otp });
       if (o.status !== 200) return { ok: false, stage: "otp", error: o.json?.error?.message || `HTTP ${o.status}` };
     }
-    if (this.flow.status !== "RESUME_REQUIRED") return { ok: false, stage: "flow", error: `unexpected status ${this.flow.status}` };
+    if (this.flow.status !== "COMPLETED") return { ok: false, stage: "flow", error: `unexpected status ${this.flow.status}` };
     const r = await this.resume();
     if (r.status !== 200) return { ok: false, stage: "resume", error: r.json?.message || `HTTP ${r.status}` };
     const t = await this.exchange();

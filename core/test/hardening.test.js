@@ -48,7 +48,7 @@ test('object-prototype names are not clients, users, codes or requests', async (
     assert.equal(a.status, 400, name); assert.equal(a.json.error, 'invalid_client');
     const d = l.driver(); await d.authorize();
     const p = await d.submit('password', { username: name, password: MOCK_PASSWORD });
-    assert.equal(p.status, 400); assert.equal(p.json.error.code, 'INVALID_CREDENTIALS');
+    assert.equal(p.status, 400); assert.equal(p.json.details[0].code, 'INVALID_CREDENTIALS');
     const c = l.ciba();
     assert.equal((await c.start({ loginHint: name })).json.error, 'unknown_user_id', name);
     c.clientId = name;

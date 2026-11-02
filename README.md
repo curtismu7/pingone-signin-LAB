@@ -1,18 +1,20 @@
 # PingOne Sign-in LAB
 
-An offline lab that shows how a PingOne-style **pi.flow** sign-in works, step by step, against a mock: PKCE, a rotating session-token cookie, replay and lockout, step-up (RFC 9470) and CIBA with a mock phone.
+A lab that teaches how a PingOne-style **pi.flow** sign-in *behaves*: wrong passwords, lockout, replay, a rotating session-token cookie, MFA, step-up (RFC 9470) and CIBA with a mock phone. It is mock only and a **simulation of behaviour**, not a copy of PingOne. For the real PingOne shapes and live use, see `pingone-LAB` (`ping-sandbox/pingone-LAB`, http://127.0.0.1:5500).
 
 Tier: Demo
 Repo: https://github.com/ping-sandbox/pingone-signin-LAB
 Catalog: A11
 
-Catalog note: `A11` (the pi.flow native sign-in kit; the lab also covers `A5` step-up and `A4` CIBA, listed as tags in the content pack) is carried over from the older repo. The board's proposed-rows note calls A11 the pi.flow-only kit, so it is not a placeholder, but this build did not re-check it against a published catalog row.
+Catalog note: `A11` (the pi.flow native sign-in kit) is this lab's catalog id. `A5` (step-up, RFC 9470) and `A4` (the CIBA stations) are real catalog rows with this lab as their home (owner decision); they are also listed as tags in the content pack. This build did not re-check the rows against a published catalog.
 
 ## What is simulated
 
-**Mock mode (the only mode).** Everything here is fictional and runs offline in one process: the users, passwords, one-time passcodes, client ids, acr names (`mock:single`, `mock:multi`), flow status names, the 8 character `binding_message` limit and the token key (made fresh at every process start). The mock PingOne, the resource server and the mock phone are in-process. No tenant, no credentials, no outbound network (a netguard refuses it and proves that at start-up). What a real PingOne does behind these steps (whether `/flows/{id}` needs a worker Bearer, what `/resume` answers, the real binding-message limit, the real acr strings) is **UNVERIFIED** here; see `docs/architecture.md`.
+**Mock mode (the only mode).** Everything here is fictional and runs offline in one process: the users, passwords, one-time passcodes, client ids, acr names (`mock:single`, `mock:multi`), flow status names, the 8 character `binding_message` limit and the token key (made fresh at every process start). The mock PingOne, the resource server and the mock phone are in-process. No tenant, no credentials, no outbound network (a netguard refuses it and proves that at start-up). What a real PingOne does behind these steps (whether `/flows/{id}` needs a worker Bearer, what `/as/resume` answers on the wire, the real binding-message limit, the real acr strings) is **UNVERIFIED** here; see `docs/architecture.md`.
 
-**Live mode does not exist in this lab.** The Live button in the header is refused with a message and the page stays in Mock. The older, broader PingOne LAB in this family (`pingone-LAB`, owner-run) is the one that can talk to a real tenant.
+**Live mode does not exist in this lab.** The Live button in the header is refused with a message that points to `pingone-LAB`, and the page stays in Mock. `pingone-LAB` (http://127.0.0.1:5500) is the lab that covers protocol coverage and can talk to a real tenant, owner-run.
+
+**Real shapes versus lab inventions.** The shared pi.flow shapes follow what the owner saw on a real PingOne run on 2026-10-30 (recorded in `pingone-LAB`): a good password ends in the status `COMPLETED`, the code is fetched by `GET /as/resume?flowId=`, and a wrong password is a `400` with `details[].code` `INVALID_CREDENTIALS`. Everything else here is this lab's own invention and labelled as such in the UI trace and in `docs/architecture.md`: the lockout rule, the passcode `424242`, the cookie rotating on every step, the `mock:single` and `mock:multi` acr names, the step-up demand and the CIBA mock phone.
 
 The banner above every tab says the same, also in presenter mode.
 
@@ -20,7 +22,7 @@ The banner above every tab says the same, also in presenter mode.
 
 1. `GET /mock/authorize` with `response_mode=pi.flow` (PKCE S256, state, nonce) answers with JSON, not a redirect: a flow `{id, status: USERNAME_PASSWORD_REQUIRED, _links}` and a session-token cookie `ST`.
 2. `POST /mock/flows/{id}` with a `vnd.pingidentity` content type checks the password (then, when the user or the requested acr demands it, a device and a one-time passcode). The cookie **rotates on every step**.
-3. `GET /mock/resume?flowId=` needs the **current** cookie and mints an authorization code bound to the PKCE challenge.
+3. The status is now `COMPLETED`, which carries a `resumeUrl`. `GET /mock/as/resume?flowId=` needs the **current** cookie (a lab rule) and answers `{ authorizeResponse: { code, state } }`, with a code bound to the PKCE challenge.
 4. `POST /mock/token` swaps code + verifier for HS256-signed `id_token` / `access_token` carrying `acr`, `amr`, `auth_time`, `sub`, `nonce`.
 5. Step-up (RFC 9470): the mock resource server answers `401 WWW-Authenticate: Bearer error="insufficient_user_authentication", acr_values=..., max_age=...`; re-authorizing with those values forces MFA and a fresh `auth_time`.
 6. CIBA: `POST /mock/bc-authorize`, poll `POST /mock/token`, and a mock phone that approves or denies.
@@ -138,7 +140,7 @@ npm test        # core (node:test), server (node:test), web (vitest), repo check
 npm run e2e     # builds web, then Playwright (real chromium) against a real server
 ```
 
-On Node 26 a good `npm test` run is: 53 core, 75 server, 76 web (vitest, 10 files) and 38 repo-check tests, 0 failed. One repo check skips itself when the owner's local forbidden-strings list is absent (so hosted CI shows 1 skipped and a machine with the list shows 0). On a heavily loaded machine the web tests can time out; `WEB_ASYNC_TIMEOUT=20000 WEB_TEST_TIMEOUT=90000 npm test` raises the limits. `npm run e2e` needs Playwright's chromium (`npx playwright install chromium` once) and covers login, MFA, lockout, step-up, CIBA, scenarios, the diagram, light and dark, a 390 px viewport, presenter mode and its keys, the Mock | Live toggle, `traceparent` and a tour of every tab. Chrome logs every deliberate 4xx fetch as a console error, so tests that refuse on purpose ignore those lines.
+On Node 26 a good `npm test` run is: 54 core, 75 server, 76 web (vitest, 10 files) and 39 repo-check tests, 0 failed. One repo check skips itself when the owner's local forbidden-strings list is absent (so hosted CI shows 1 skipped and a machine with the list shows 0). On a heavily loaded machine the web tests can time out; `WEB_ASYNC_TIMEOUT=20000 WEB_TEST_TIMEOUT=90000 npm test` raises the limits. `npm run e2e` needs Playwright's chromium (`npx playwright install chromium` once) and covers login, MFA, lockout, step-up, CIBA, scenarios, the diagram, light and dark, a 390 px viewport, presenter mode and its keys, the Mock | Live toggle, `traceparent` and a tour of every tab. Chrome logs every deliberate 4xx fetch as a console error, so tests that refuse on purpose ignore those lines.
 
 ## Troubleshooting
 
@@ -153,4 +155,4 @@ On Node 26 a good `npm test` run is: 53 core, 75 server, 76 web (vitest, 10 file
 - Owner: the Ping demo family owner (Demo tier).
 - License: MIT (see `LICENSE`).
 - Found a problem? Open an issue on the repo.
-- Related, not merged: `pingone-LAB` (ports 5500-5549) is a broader PingOne lab with a live mode; this one is the sign-in flow only. Whether the two should be merged is an owner decision.
+- Related, kept separate (owner decision): `pingone-LAB` (ports 5500-5549, http://127.0.0.1:5500) covers PingOne protocol coverage with real shapes and a live mode. This lab covers sign-in behaviour: failures, lockout, replay, MFA, step-up and CIBA with a mock phone, mock only.

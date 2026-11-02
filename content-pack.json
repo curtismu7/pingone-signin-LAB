@@ -24,7 +24,7 @@
     {
       "id": "pi-flow",
       "term": "pi.flow (response_mode=pi.flow)",
-      "definition": "An embedded sign-in: the authorize request is answered with JSON describing a flow and its status, not with a redirect to a hosted login page. The client (usually a BFF) then drives the flow one step at a time. This lab signs in this way only. Modelled on the public PingOne sample apps; details are UNVERIFIED against a real tenant.",
+      "definition": "An embedded sign-in: the authorize request is answered with JSON describing a flow and its status, not with a redirect to a hosted login page. The client (usually a BFF) then drives the flow one step at a time. This lab signs in this way only, and teaches how such a sign-in behaves (failures, lockout, replay, MFA, step-up, CIBA) as a mock-only simulation. The shared shapes follow a real PingOne run recorded in pingone-LAB (http://127.0.0.1:5500); the rest is modelled on the public PingOne sample apps and is UNVERIFIED against a real tenant.",
       "aliases": [
         "embedded login",
         "pi.flow"
@@ -38,12 +38,12 @@
     {
       "id": "flow-status",
       "term": "Flow status",
-      "definition": "Where a pi.flow flow is: USERNAME_PASSWORD_REQUIRED, then DEVICE_SELECTION_REQUIRED and OTP_REQUIRED when MFA applies, then RESUME_REQUIRED, then COMPLETED. These names are the mock's. A real PingOne has more statuses (policy screens, external IdP steps) and the exact names are UNVERIFIED here."
+      "definition": "Where a pi.flow flow is: USERNAME_PASSWORD_REQUIRED, then DEVICE_SELECTION_REQUIRED and OTP_REQUIRED when MFA applies, then COMPLETED. The code is not in the COMPLETED answer: the client calls GET /as/resume?flowId= and reads authorizeResponse. USERNAME_PASSWORD_REQUIRED, COMPLETED and the resume call were seen on a real PingOne run (pingone-LAB); the MFA statuses and their order are this lab's invention, UNVERIFIED. A real PingOne has more statuses (SIGN_ON_REQUIRED on an identifier-first policy, policy screens, external IdP steps), which this lab does not drive."
     },
     {
       "id": "session-token-cookie",
       "term": "Session-token cookie (ST)",
-      "definition": "A cookie that binds a flow to one client. In this mock it is replaced on every step, and a flow call or resume with an old or missing cookie is 401 INVALID_SESSION_TOKEN. The cookie name and the exact rotation points are UNVERIFIED against a real PingOne. The page never sees the real value (HttpOnly); it shows the server's shortened preview.",
+      "definition": "A cookie that binds a flow to one client. In this mock it is replaced on every step, and a flow call or resume with an old or missing cookie is 401 INVALID_SESSION_TOKEN. The cookie name ST was seen on a real PingOne run; rotating it on every step, and the 401 for an old one, are this lab's invention, UNVERIFIED. The page never sees the real value (HttpOnly); it shows the server's shortened preview.",
       "aliases": [
         "ST cookie",
         "cookie rotation"
@@ -229,7 +229,7 @@
     {
       "id": "concept-flow-statuses",
       "label": "Flow statuses",
-      "description": "From USERNAME_PASSWORD_REQUIRED to COMPLETED, with MFA in between. Mock names, UNVERIFIED.",
+      "description": "From USERNAME_PASSWORD_REQUIRED to COMPLETED (then GET /as/resume), with MFA in between. The MFA order is a lab invention, UNVERIFIED.",
       "group": "concept",
       "action": {
         "type": "route",
@@ -243,7 +243,7 @@
     {
       "id": "concept-cookie-rotation",
       "label": "Cookie rotation",
-      "description": "The session-token cookie changes at every step; an old one cannot resume.",
+      "description": "Lab invention: the session-token cookie changes at every step; an old one cannot resume.",
       "group": "concept",
       "action": {
         "type": "route",
@@ -344,7 +344,7 @@
     {
       "id": "S04",
       "title": "Resume with a stale session-token cookie is rejected",
-      "say": "The cookie changes on every step. Replaying an older one at /resume is refused; the current one still works."
+      "say": "The cookie changes on every step. Replaying an older one at /as/resume is refused; the current one still works."
     },
     {
       "id": "S05",
@@ -404,7 +404,7 @@
     {
       "id": "S16",
       "title": "Priya Nair signs in with a password and a one-time passcode",
-      "say": "Two enrolled devices means DEVICE_SELECTION_REQUIRED, then OTP_REQUIRED, then RESUME_REQUIRED. The token's acr is mock:multi and amr lists the factors."
+      "say": "Two enrolled devices means DEVICE_SELECTION_REQUIRED, then OTP_REQUIRED, then COMPLETED and a call to /as/resume. The token's acr is mock:multi and amr lists the factors."
     }
   ]
 }

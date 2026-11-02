@@ -41,6 +41,7 @@ describe("Mock | Live toggle (every page)", () => {
     expect(screen.queryByTestId("mode-note")).toBeNull();
     await user.click(screen.getByTestId("mode-live"));
     expect(screen.getByTestId("mode-note")).toHaveTextContent(/Live mode is not available in this lab/);
+    expect(screen.getByTestId("mode-note")).toHaveTextContent(/pingone-LAB.*127\.0\.0\.1:5500/);
     expect(screen.getByTestId("mode-note")).toHaveTextContent(/no tenant connection/);
     expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("mode-live")).toHaveAttribute("aria-pressed", "false");
@@ -108,7 +109,7 @@ describe("accessibility", () => {
 
   it("a not-yet-ready action button is aria-disabled, not disabled, stays focusable, and a click does nothing", async () => {
     const user = await open();
-    const resume = screen.getByRole("button", { name: /Resume \(GET \/resume\)/ });
+    const resume = screen.getByRole("button", { name: /Resume \(GET \/as\/resume\)/ });
     expect(resume).toHaveAttribute("aria-disabled", "true");
     expect(resume).not.toHaveAttribute("disabled");
     resume.focus();

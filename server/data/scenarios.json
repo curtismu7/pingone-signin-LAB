@@ -9,7 +9,7 @@
     "takeaway": "After the limit even the right password is refused until the lock lapses.",
     "expect": { "outcome": "refused", "error": "ACCOUNT_LOCKED", "rightPasswordAlsoRefused": true } },
   { "id": "S04", "slug": "stale-cookie-resume", "kind": "refuse", "title": "Resume with a stale session-token cookie is rejected",
-    "takeaway": "The cookie changes on every step. Replaying an older one at /resume is refused; the current one still works.",
+    "takeaway": "The cookie changes on every step. Replaying an older one at /as/resume is refused; the current one still works.",
     "expect": { "outcome": "refused", "status": 401, "error": "INVALID_SESSION_TOKEN", "currentCookieStillWorks": true } },
   { "id": "S05", "slug": "expired-flow", "kind": "refuse", "title": "A flow left open too long expires",
     "takeaway": "Flows live five minutes in this mock. After that the credentials step is refused and the client must start over.",
@@ -45,6 +45,6 @@
     "takeaway": "The mock limits binding_message to 8 characters and refuses a longer one with invalid_binding_message. The limit is a mock value, not verified against a real tenant.",
     "expect": { "outcome": "refused", "status": 400, "error": "invalid_binding_message" } },
   { "id": "S16", "slug": "mfa-login", "kind": "pass", "title": "{{cast.multi}} signs in with a password and a one-time passcode",
-    "takeaway": "Two enrolled devices means DEVICE_SELECTION_REQUIRED, then OTP_REQUIRED, then RESUME_REQUIRED. The token's acr is mock:multi and amr lists the factors.",
+    "takeaway": "Two enrolled devices means DEVICE_SELECTION_REQUIRED, then OTP_REQUIRED, then COMPLETED and a call to /as/resume. The token's acr is mock:multi and amr lists the factors.",
     "expect": { "outcome": "signed_in", "acr": "mock:multi", "amr": "pwd,otp,mfa", "devicePicked": true } }
 ]

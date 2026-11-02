@@ -1,7 +1,7 @@
 import React from "react";
 
 // Shown when someone presses Live. This lab is an offline mock of a pi.flow sign-in: it has no live mode to switch to.
-export const LIVE_REFUSED = "Live mode is not available in this lab. It is an offline mock of a PingOne pi.flow sign-in, with no tenant connection and no credentials, so the page stays in Mock. For a real PingOne, use the PingOne LAB (owner-run).";
+export const LIVE_REFUSED = "Live mode is not available in this lab. It is an offline mock of a PingOne pi.flow sign-in, with no tenant connection and no credentials, so the page stays in Mock. For real PingOne shapes and live use, open pingone-LAB (owner-run, http://127.0.0.1:5500).";
 
 // The header on every page, including while the lab is still loading: the title, the Mock | Live toggle, the mode, and the controls.
 // `catalog`, `onVertical` and `onReset` are absent until the lab has loaded.

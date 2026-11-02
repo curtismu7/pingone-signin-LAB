@@ -7,7 +7,8 @@ import { Mock, Pill, TokenView, TraceList, Unverified, Btn } from "../components
 const problem = (r) => {
   const j = r.json;
   const e = j && typeof j.error === "object" && j.error ? j.error : j || {};
-  return { status: r.status, code: e.code || e.error || `HTTP ${r.status}`, message: e.message || e.error_description || "The mock refused the request.", attempts: j?.attempts || null };
+  const detail = Array.isArray(j?.details) && j.details[0] && typeof j.details[0].code === "string" ? j.details[0] : null;
+  return { status: r.status, code: detail?.code || e.code || e.error || `HTTP ${r.status}`, message: e.message || e.error_description || "The mock refused the request.", attempts: j?.attempts || null };
 };
 
 export function useLogin(catalog) {
@@ -34,7 +35,7 @@ export function useLogin(catalog) {
     setV({ status: r.status === 200 ? r.json.status : "IDLE", flow: client.current.flow, error: r.status === 200 ? null : problem(r), busy: false, result: null, code: null });
   }), [guard, tracer, redirectUri]);
   const submit = useCallback((kind, body) => guard(async (g) => { const r = await client.current.submit(kind, body); if (g === gen.current) apply(r); }), [guard]);
-  const resume = useCallback(() => guard(async (g) => { const r = await client.current.resume(); if (g === gen.current) apply(r, r.status === 200 ? { status: "COMPLETED", code: r.json.code } : {}); }), [guard]);
+  const resume = useCallback(() => guard(async (g) => { const r = await client.current.resume(); if (g === gen.current) apply(r, r.status === 200 ? { status: "COMPLETED", code: r.json.authorizeResponse.code } : {}); }), [guard]);
   const exchange = useCallback(() => guard(async (g) => {
     const r = await client.current.exchange();
     if (g !== gen.current) return;
@@ -45,7 +46,7 @@ export function useLogin(catalog) {
   return { v, entries, start, submit, resume, exchange, reset };
 }
 
-const STEPS = ["USERNAME_PASSWORD_REQUIRED", "DEVICE_SELECTION_REQUIRED", "OTP_REQUIRED", "RESUME_REQUIRED", "COMPLETED", "SIGNED_IN"];
+const STEPS = ["USERNAME_PASSWORD_REQUIRED", "DEVICE_SELECTION_REQUIRED", "OTP_REQUIRED", "COMPLETED", "SIGNED_IN"];
 
 export default function SignInTab({ app }) {
   const { catalog, login } = app;
@@ -64,9 +65,10 @@ export default function SignInTab({ app }) {
   useEffect(() => {
     if (v.busy) return;
     const lost = !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || ""); // on a button (disabled while the request ran) or nowhere
-    if (focusedFor.current !== v.status) { focusedFor.current = v.status; stage.current?.querySelector("[data-autofocus]")?.focus(); }
+    const at = v.code ? `${v.status}+code` : v.status; // COMPLETED moves on again once the code is fetched
+    if (focusedFor.current !== at) { focusedFor.current = at; stage.current?.querySelector("[data-autofocus]")?.focus(); }
     else if (v.error && lost) (stage.current?.querySelector("input[name=password], input[name=otp]") || stage.current?.querySelector("[data-autofocus]"))?.focus();
-  }, [v.status, v.error, v.busy]);
+  }, [v.status, v.code, v.error, v.busy]);
   useEffect(() => { if (v.flow?._embedded?.devices) setDevice(v.flow._embedded.devices[0].id); }, [v.flow]);
   useEffect(() => { if (v.status === "IDLE") { setPassword(""); setOtp(""); } }, [v.status]);
 
@@ -87,7 +89,7 @@ export default function SignInTab({ app }) {
               <tr><th scope="row">GET /authorize answers with</th><td>a 302 to the provider's login page</td><td>JSON: a flow id and a status such as USERNAME_PASSWORD_REQUIRED</td></tr>
               <tr><th scope="row">Who draws the login screen</th><td>the provider, on its own page</td><td>this app, from the status the flow returns</td></tr>
               <tr><th scope="row">Where the password goes</th><td>typed on the provider's page; this app never sees it</td><td>POSTed by this app to /flows/{"{id}"}; this app handles it</td></tr>
-              <tr><th scope="row">How the user returns</th><td>a redirect back to the redirect_uri with a code</td><td>the user never leaves; GET /resume returns the code</td></tr>
+              <tr><th scope="row">How the user returns</th><td>a redirect back to the redirect_uri with a code</td><td>the user never leaves; GET /as/resume returns the code</td></tr>
             </tbody>
           </table>
           <p className="small muted">Why use it: the login stays in your own UI, so it can be branded and explained one step at a time, with no browser hop. The cost: your app now handles the credentials, so it must protect them. This lab is pi.flow only: an authorize request without response_mode=pi.flow is refused. PingOne behaviour behind these steps is UNVERIFIED here.</p>
@@ -139,7 +141,7 @@ export default function SignInTab({ app }) {
               </div>
             </li>
             <li className="steps-list__item">
-              <div className="steps-list__head"><span className="step-n" aria-hidden="true">2</span> Sign in {v.status === "RESUME_REQUIRED" || v.status === "COMPLETED" || v.status === "SIGNED_IN" ? <Pill tone="ok">done</Pill> : null}</div>
+              <div className="steps-list__head"><span className="step-n" aria-hidden="true">2</span> Sign in {v.status === "COMPLETED" || v.status === "SIGNED_IN" ? <Pill tone="ok">done</Pill> : null}</div>
               <form onSubmit={onPassword} className="form" aria-label="Sign in">
                 <label className="field">Username
                   <input name="username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" disabled={v.status !== "USERNAME_PASSWORD_REQUIRED"} data-autofocus={v.status === "USERNAME_PASSWORD_REQUIRED" || undefined} />
@@ -151,15 +153,15 @@ export default function SignInTab({ app }) {
               </form>
             </li>
             <li className="steps-list__item">
-              <div className="steps-list__head"><span className="step-n" aria-hidden="true">3</span> Resume {v.status === "COMPLETED" || v.status === "SIGNED_IN" ? <Pill tone="ok">done</Pill> : null}</div>
+              <div className="steps-list__head"><span className="step-n" aria-hidden="true">3</span> Resume {v.code || v.status === "SIGNED_IN" ? <Pill tone="ok">done</Pill> : null}</div>
               <div className="controls">
-                <Btn type="button" className="primary" disabled={v.busy || v.status !== "RESUME_REQUIRED"} onClick={login.resume} data-autofocus={v.status === "RESUME_REQUIRED" || undefined}><span className="step-n" aria-hidden="true">3</span> Resume (GET /resume)</Btn>
+                <Btn type="button" className="primary" disabled={v.busy || v.status !== "COMPLETED" || !!v.code} onClick={login.resume} data-autofocus={(v.status === "COMPLETED" && !v.code) || undefined}><span className="step-n" aria-hidden="true">3</span> Resume (GET /as/resume)</Btn>
               </div>
             </li>
             <li className="steps-list__item">
               <div className="steps-list__head"><span className="step-n" aria-hidden="true">4</span> Exchange the code {v.status === "SIGNED_IN" ? <Pill tone="ok">done</Pill> : null}</div>
               <div className="controls">
-                <Btn type="button" className="primary" disabled={v.busy || v.status !== "COMPLETED"} onClick={login.exchange} data-autofocus={v.status === "COMPLETED" || undefined}><span className="step-n" aria-hidden="true">4</span> Exchange the code (POST /token)</Btn>
+                <Btn type="button" className="primary" disabled={v.busy || v.status !== "COMPLETED" || !v.code} onClick={login.exchange} data-autofocus={(v.status === "COMPLETED" && !!v.code) || undefined}><span className="step-n" aria-hidden="true">4</span> Exchange the code (POST /token)</Btn>
               </div>
             </li>
           </ol>

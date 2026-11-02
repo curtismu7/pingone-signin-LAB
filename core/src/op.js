@@ -1,6 +1,10 @@
 // The mock PingOne, as one pure object: handle({method, path, query, headers, body, baseUrl}) -> {status, headers, body}.
 // No sockets, no express. Authorization-endpoint login is pi.flow ONLY; there is no redirect-based login path.
 // Everything about real PingOne behaviour marked UNVERIFIED in docs/architecture.md is a guess, not a claim.
+// Shapes shared with pingone-LAB (checked there against a real PingOne run on 2026-10-30): the status COMPLETED after a good
+// password, the code fetched by GET /as/resume?flowId= as { authorizeResponse: { code, state } }, and a wrong password as 400
+// with details[].code INVALID_CREDENTIALS. Lab inventions (UNVERIFIED): the lockout rule, OTP 424242, the per-step ST rotation,
+// step-up acr names, the CIBA mock phone.
 import { randomBytes } from 'node:crypto';
 import { newKey, signJwt, verifyJwt, safeEqual, pkceChallenge } from './jwt.js';
 import { ACR, buildChallenge, stepUpNeeded } from './stepup.js';
@@ -84,7 +88,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
     const f = {
       id: random(), client: q.client_id, redirectUri: q.redirect_uri, scope: q.scope, state: q.state, nonce: q.nonce, challenge: q.code_challenge,
       loginHint: q.login_hint || null, acrValues, maxAge, status: 'USERNAME_PASSWORD_REQUIRED', cookie: random(), user: null,
-      amr: [], authTime: null, deviceId: null, otpFails: 0, fails: 0, createdAt: now(), expiresAt: now() + cfg.flowTtlS * 1000,
+      amr: [], authTime: null, deviceId: null, otpFails: 0, fails: 0, resumed: false, createdAt: now(), expiresAt: now() + cfg.flowTtlS * 1000,
     };
     st.flows.set(f.id, f);
     return res(200, view(f, q.__base), { 'set-cookie': [setCookie(f.cookie)] });
@@ -99,7 +103,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
       body._embedded = { devices: users[f.user].devices.map(({ id: did, type, label }) => ({ id: did, type, label })) };
     }
     if (f.status === 'OTP_REQUIRED') body._links['otp.check'] = { href: self };
-    if (f.status === 'RESUME_REQUIRED') { body.resumeUrl = `${base}/resume?flowId=${f.id}`; body._links.resume = { href: body.resumeUrl }; }
+    if (f.status === 'COMPLETED') { body.resumeUrl = `${base}/as/resume?flowId=${f.id}`; body._links.resume = { href: body.resumeUrl }; }
     return body;
   }
 
@@ -109,7 +113,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
     const f = st.flows.get(flowId);
     if (!f) return { err: flowErr(404, 'NOT_FOUND', 'unknown flow') };
     if (now() >= f.expiresAt) return { err: flowErr(400, 'FLOW_EXPIRED', 'the flow has expired; start a new authorization request') };
-    if (f.status === 'COMPLETED' || f.status === 'FAILED') return { err: flowErr(400, f.status === 'COMPLETED' ? 'FLOW_ALREADY_COMPLETED' : 'FLOW_FAILED', `the flow is ${f.status}; flows are single use`) };
+    if (f.resumed || f.status === 'FAILED') return { err: flowErr(400, f.resumed ? 'FLOW_ALREADY_COMPLETED' : 'FLOW_FAILED', `the flow is ${f.resumed ? 'COMPLETED and resumed' : f.status}; flows are single use`) };
     const c = cookieOf(headers);
     if (!c || !safeEqual(c, f.cookie)) return { err: flowErr(401, 'INVALID_SESSION_TOKEN', 'Session token cookie value does not match the flow') };
     return { f };
@@ -140,6 +144,8 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     const out = (extra, status = 200) => res(status, view(f, base, extra), rotate(f));
     const fail = (status, code, message, extra = {}) => res(status, view(f, base, { error: { code, message }, ...extra }), rotate(f));
+    // A wrong password in the shape pingone-LAB saw on a real PingOne: 400, details[].code INVALID_CREDENTIALS, the flow keeps waiting.
+    const badCredentials = (extra) => res(400, view(f, base, { code: 'INVALID_DATA', message: 'the username or password is incorrect', details: [{ code: 'INVALID_CREDENTIALS', message: 'the username or password is incorrect' }], ...extra }), rotate(f));
 
     if (f.status === 'USERNAME_PASSWORD_REQUIRED' && kind === 'password') {
       if (!str(body.username, 128) || typeof body.password !== 'string' || body.password.length > 256) return fail(400, 'INVALID_REQUEST', 'username and password are required');
@@ -150,7 +156,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
       if (!user || !safeEqual(user.password, body.password)) {
         lock.fails += 1;
         if (lock.fails >= cfg.maxAttempts) { lock.until = now() + cfg.lockoutS * 1000; return fail(400, 'ACCOUNT_LOCKED', `account is locked for ${cfg.lockoutS}s after ${cfg.maxAttempts} failed attempts`, attempts()); }
-        return fail(400, 'INVALID_CREDENTIALS', 'the username or password is incorrect', attempts());
+        return badCredentials(attempts());
       }
       lock.fails = 0;
       const name = body.username.trim().toLowerCase();
@@ -160,7 +166,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
       if (user.mfa || wantsMulti) {
         if (user.devices.length > 1) f.status = 'DEVICE_SELECTION_REQUIRED';
         else { f.deviceId = user.devices[0].id; f.status = 'OTP_REQUIRED'; }
-      } else f.status = 'RESUME_REQUIRED';
+      } else f.status = 'COMPLETED';
       return out();
     }
     if (f.status === 'DEVICE_SELECTION_REQUIRED' && kind === 'device') {
@@ -175,7 +181,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
         if (f.otpFails >= cfg.otpAttempts) { f.status = 'FAILED'; return out({ error: { code: 'OTP_ATTEMPTS_EXCEEDED', message: 'too many wrong one-time passcodes; the flow is closed' } }, 400); }
         return fail(400, 'OTP_INVALID', 'the one-time passcode is incorrect', { attempts: { used: f.otpFails, max: cfg.otpAttempts, remaining: cfg.otpAttempts - f.otpFails } });
       }
-      f.amr = ['pwd', 'otp', 'mfa']; f.status = 'RESUME_REQUIRED';
+      f.amr = ['pwd', 'otp', 'mfa']; f.status = 'COMPLETED';
       return out();
     }
     return fail(400, 'UNEXPECTED_STEP', `the flow is at ${f.status}; that content type does not apply`);
@@ -186,20 +192,20 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
     return err || res(200, view(f, base));
   }
 
-  // ---- GET /resume?flowId= ----
+  // ---- GET /as/resume?flowId= ----
   function resume(q, req, base) {
     const { f, err } = loadFlow(q.flowId, req.headers || {});
     if (err) return err;
-    if (f.status !== 'RESUME_REQUIRED') return flowErr(400, 'NOT_READY', `the flow is at ${f.status}, not RESUME_REQUIRED`);
+    if (f.status !== 'COMPLETED') return flowErr(400, 'NOT_READY', `the flow is at ${f.status}, not COMPLETED`);
     const code = randomBytes(24).toString('base64url');
     const mfa = f.amr.includes('mfa');
     st.codes.set(code, {
       flowId: f.id, client: f.client, redirectUri: f.redirectUri, challenge: f.challenge, nonce: f.nonce, scope: f.scope, user: f.user,
       acr: mfa ? ACR.multi : ACR.single, amr: f.amr, authTime: f.authTime, expiresAt: now() + cfg.codeTtlS * 1000, used: false,
     });
-    f.status = 'COMPLETED';
-    // UNVERIFIED: the real /resume may answer with a redirect rather than JSON. The mock answers 200 JSON for the BFF to read.
-    return res(200, { id: f.id, status: 'COMPLETED', code, state: f.state, redirect_uri: f.redirectUri }, rotate(f));
+    f.resumed = true;
+    // UNVERIFIED: the real /as/resume may answer with a redirect rather than JSON. The mock answers 200 JSON, in pingone-LAB's mock shape, for the BFF to read.
+    return res(200, { authorizeResponse: { code, state: f.state } }, rotate(f));
   }
 
   // ---- POST /token ----
@@ -313,7 +319,7 @@ export function createMockOP({ now = Date.now, config = {}, users = USERS, clien
       if (method === 'GET') return getFlow(safeDecode(m[1]), req, base);
       return flowErr(405, 'METHOD_NOT_ALLOWED', 'GET or POST');
     }
-    if (path === '/resume') return method === 'GET' ? resume(query, req, base) : flowErr(405, 'METHOD_NOT_ALLOWED', 'GET only');
+    if (path === '/as/resume') return method === 'GET' ? resume(query, req, base) : flowErr(405, 'METHOD_NOT_ALLOWED', 'GET only');
     if (path === '/token') return method === 'POST' ? token(body) : flowErr(405, 'METHOD_NOT_ALLOWED', 'POST only');
     if (path === '/bc-authorize') return method === 'POST' ? bcAuthorize(body) : flowErr(405, 'METHOD_NOT_ALLOWED', 'POST only');
     if ((m = /^\/phone\/([a-z]+)$/.exec(path))) return phone(method, m[1], req);

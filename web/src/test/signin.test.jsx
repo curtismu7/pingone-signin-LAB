@@ -34,9 +34,10 @@ describe("Sign in tab", () => {
   it("happy path: password, resume, exchange, then the decoded claims", async () => {
     const user = await open();
     await login(user, "mark");
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
-    await user.click(screen.getByRole("button", { name: /Resume/ }));
     await waitFor(() => expect(status()).toMatch(/COMPLETED/));
+    expect(screen.getByRole("button", { name: /Exchange the code/ })).toHaveAttribute("aria-disabled", "true");
+    await user.click(screen.getByRole("button", { name: /Resume/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Exchange the code/ })).not.toHaveAttribute("aria-disabled", "true"));
     await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
     const tokens = await screen.findByTestId("tokens");
     expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:single");
@@ -49,7 +50,7 @@ describe("Sign in tab", () => {
   it("the trace shows each call, masks the password and shortens the rotating cookie", async () => {
     const user = await open();
     await login(user, "mark");
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
+    await waitFor(() => expect(status()).toMatch(/COMPLETED/));
     const pane = screen.getByRole("region", { name: "Trace" });
     expect(pane.textContent).toContain("********");
     expect(pane.textContent).not.toContain("mock-password");
@@ -67,9 +68,10 @@ describe("Sign in tab", () => {
     await waitFor(() => expect(status()).toMatch(/OTP_REQUIRED/));
     await user.type(screen.getByLabelText(/One-time passcode/), "424242");
     await user.click(screen.getByRole("button", { name: "Verify" }));
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
+    await waitFor(() => expect(status()).toMatch(/COMPLETED/));
     await user.click(screen.getByRole("button", { name: /Resume/ }));
-    await user.click(await screen.findByRole("button", { name: /Exchange the code/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Exchange the code/ })).not.toHaveAttribute("aria-disabled", "true"));
+    await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
     expect(within(within(await screen.findByTestId("tokens")).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:multi");
   });
 
@@ -82,7 +84,7 @@ describe("Sign in tab", () => {
     expect(status()).toMatch(/USERNAME_PASSWORD_REQUIRED/);
     await user.type(screen.getByLabelText("Password"), "mock-password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
+    await waitFor(() => expect(status()).toMatch(/COMPLETED/));
     expect(screen.queryByTestId("flow-error")).toBeNull();
   });
 
