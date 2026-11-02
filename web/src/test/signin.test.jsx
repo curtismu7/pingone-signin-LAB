@@ -3,6 +3,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { hold, jsonResponse, startFakeServer } from "./fakeServer.js";
 import { open, status, enabled } from "./helpers.jsx";
+import { PiFlowClient } from "../lib/flow.js";
+import { createTracer } from "../lib/trace.js";
 
 // The controls are always on screen, greyed out until their step is ready, so wait for enabled ones.
 const enabledField = (label) => waitFor(() => { const f = screen.getByLabelText(label); expect(f).toBeEnabled(); return f; });
@@ -21,6 +23,15 @@ async function login(user, name, pw = "mock-password") {
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 }
 
+describe("PiFlowClient", () => {
+  it("a full sign-in reads the state from authorizeResponse, so stateOk and nonceOk are true", async () => {
+    const r = await new PiFlowClient({ tracer: createTracer(), redirectUri: "https://app.lab.example/callback" }).run({ username: "mark", password: "mock-password" });
+    expect(r.ok).toBe(true);
+    expect(r.stateOk).toBe(true);
+    expect(r.nonceOk).toBe(true);
+  });
+});
+
 describe("Sign in tab", () => {
   it("shows the seeded users with their mock password, labelled fictional", async () => {
     await open();
@@ -34,9 +45,11 @@ describe("Sign in tab", () => {
   it("happy path: password, resume, exchange, then the decoded claims", async () => {
     const user = await open();
     await login(user, "mark");
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
-    await user.click(screen.getByRole("button", { name: /Resume/ }));
     await waitFor(() => expect(status()).toMatch(/COMPLETED/));
+    expect(screen.getByRole("button", { name: /Exchange the code/ })).toHaveAttribute("aria-disabled", "true");
+    await user.click(screen.getByRole("button", { name: /Resume/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Exchange the code/ })).not.toHaveAttribute("aria-disabled", "true"));
+    expect(screen.getByRole("button", { name: /Resume/ })).toHaveAttribute("aria-disabled", "true"); // the code is fetched: a second resume would be refused
     await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
     const tokens = await screen.findByTestId("tokens");
     expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:single");
@@ -49,7 +62,7 @@ describe("Sign in tab", () => {
   it("the trace shows each call, masks the password and shortens the rotating cookie", async () => {
     const user = await open();
     await login(user, "mark");
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
+    await waitFor(() => expect(status()).toMatch(/COMPLETED/));
     const pane = screen.getByRole("region", { name: "Trace" });
     expect(pane.textContent).toContain("********");
     expect(pane.textContent).not.toContain("mock-password");
@@ -67,9 +80,10 @@ describe("Sign in tab", () => {
     await waitFor(() => expect(status()).toMatch(/OTP_REQUIRED/));
     await user.type(screen.getByLabelText(/One-time passcode/), "424242");
     await user.click(screen.getByRole("button", { name: "Verify" }));
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
+    await waitFor(() => expect(status()).toMatch(/COMPLETED/));
     await user.click(screen.getByRole("button", { name: /Resume/ }));
-    await user.click(await screen.findByRole("button", { name: /Exchange the code/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Exchange the code/ })).not.toHaveAttribute("aria-disabled", "true"));
+    await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
     expect(within(within(await screen.findByTestId("tokens")).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:multi");
   });
 
@@ -82,7 +96,7 @@ describe("Sign in tab", () => {
     expect(status()).toMatch(/USERNAME_PASSWORD_REQUIRED/);
     await user.type(screen.getByLabelText("Password"), "mock-password");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
-    await waitFor(() => expect(status()).toMatch(/RESUME_REQUIRED/));
+    await waitFor(() => expect(status()).toMatch(/COMPLETED/));
     expect(screen.queryByTestId("flow-error")).toBeNull();
   });
 

@@ -9,7 +9,7 @@ const q = (over = {}) => ({ client_id: 'lab-app', redirect_uri: 'https://app.lab
 
 test('handle() never throws: odd inputs give a JSON answer', () => {
   const op = createMockOP();
-  for (const req of [{}, { path: '/flows/%zz' }, { path: '/flows/%' }, { path: '/flows/%E0%A4%A', method: 'POST' }, { method: 'POST', path: '/token', body: null }, { path: '/authorize', query: null }, { path: '/resume', query: { flowId: ['a', 'b'] } }]) {
+  for (const req of [{}, { path: '/flows/%zz' }, { path: '/flows/%' }, { path: '/flows/%E0%A4%A', method: 'POST' }, { method: 'POST', path: '/token', body: null }, { path: '/authorize', query: null }, { path: '/as/resume', query: { flowId: ['a', 'b'] } }, { path: '/as/resume', query: { flowId: {} } }, { path: '/as/resume', query: null }]) {
     const r = op.handle(req);
     assert.ok(r.status >= 200 && r.status < 600 && r.body, JSON.stringify(req));
   }
@@ -48,7 +48,7 @@ test('object-prototype names are not clients, users, codes or requests', async (
     assert.equal(a.status, 400, name); assert.equal(a.json.error, 'invalid_client');
     const d = l.driver(); await d.authorize();
     const p = await d.submit('password', { username: name, password: MOCK_PASSWORD });
-    assert.equal(p.status, 400); assert.equal(p.json.error.code, 'INVALID_CREDENTIALS');
+    assert.equal(p.status, 400); assert.equal(p.json.details[0].code, 'INVALID_CREDENTIALS');
     const c = l.ciba();
     assert.equal((await c.start({ loginHint: name })).json.error, 'unknown_user_id', name);
     c.clientId = name;

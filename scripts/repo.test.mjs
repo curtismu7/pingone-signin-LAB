@@ -100,7 +100,8 @@ test('docs name only ports in 6100-6199 and the README states the default port',
     for (const m of read(f).matchAll(/(?:localhost|127\.0\.0\.1|PORT=|HOST_PORT=)[:=]?(\d{4,5})/g)) ports.add(Number(m[1]));
   }
   assert.ok(ports.has(6171));
-  for (const p of ports) assert.equal(portProblem(p), null, String(p));
+  const SIBLING_LAB_PORT = 5500; // pingone-LAB, named only as a pointer to the lab that holds the real PingOne shapes
+  for (const p of ports) if (p !== SIBLING_LAB_PORT) assert.equal(portProblem(p), null, String(p));
 });
 
 test('the README only promises npm scripts and curl endpoints that exist', () => {
@@ -172,8 +173,17 @@ test('content pack validation rejects a broken pack', () => {
   assert.ok(validatePack(pack).length > 0);
 });
 
+test('shelf entry is one flat object in the committed shelf format, with a description of at most 300 characters', () => {
+  const d = JSON.parse(read('docs/shelf-entry.json'));
+  assert.ok(!Array.isArray(d) && !('demos' in d), 'flat object, not wrapped in a demos array');
+  for (const k of ['id', 'name', 'kind', 'description', 'url', 'healthPath', 'composeFile', 'composeOverlays', 'port', 'notes', 'catalogId']) assert.ok(k in d, k);
+  assert.ok(typeof d.description === 'string' && d.description.length > 0 && d.description.length <= 300, `description is ${d.description.length} characters`);
+  assert.match(d.description, /pingone-LAB/, 'the description points at the sibling lab');
+  assert.equal(d.port, Number(new URL(d.url).port));
+});
+
 test('shelf entry matches the demo: id, port, health path, loopback url', () => {
-  const [d] = JSON.parse(read('docs/shelf-entry.json')).demos;
+  const d = JSON.parse(read('docs/shelf-entry.json'));
   assert.equal(d.id, 'pingone-signin-lab');
   assert.equal(d.healthPath, '/api/health');
   assert.equal(d.catalogId, 'A11');
@@ -223,7 +233,7 @@ test('the hub validator checks are enforced here: dotted ids, token-shaped strin
 });
 
 test('shelf entry: catalog id A11 matches the pack, composeFile is a relative path that exists in this repo (portable: no author path)', () => {
-  const [d] = JSON.parse(read('docs/shelf-entry.json')).demos;
+  const d = JSON.parse(read('docs/shelf-entry.json'));
   assert.equal(d.catalogId, 'A11');
   assert.equal(JSON.parse(read('content-pack.json')).demo.catalog, 'A11');
   assert.ok(!path.isAbsolute(d.composeFile), d.composeFile);

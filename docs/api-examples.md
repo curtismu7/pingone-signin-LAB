@@ -1,6 +1,6 @@
 # API examples: every request in a pi.flow sign-in
 
-These are requests and responses captured from a run of this lab on 2026-10-26, with the host name rewritten to the local one (`http://127.0.0.1:6171`) and the HTTP version shown as 1.1. The local copy answers the same way. Every value is a mock: the users, passwords, acr names, token signing key and issuer are fictional. The acr names, status names and CIBA limits are UNVERIFIED against a real PingOne tenant.
+These are requests and responses first captured from a run of this lab on 2026-10-26 and then hand-edited on 2026-11-02 to match the shapes below (not a fresh capture), with the host name rewritten to the local one (`http://127.0.0.1:6171`) and the HTTP version shown as 1.1. The local copy answers the same way. Every value is a mock: the users, passwords, acr names, token signing key and issuer are fictional. The status `COMPLETED`, the `GET /as/resume` call and `INVALID_CREDENTIALS` follow the shapes pingone-LAB saw on a real PingOne run (2026-10-30); the acr names, the cookie rotation, the lockout, the passcode and the CIBA limits are this lab's inventions and UNVERIFIED against a real PingOne tenant. For real shapes and live use, see `pingone-LAB` (http://127.0.0.1:5500).
 
 **The rule that matters:** sign-in is pi.flow only. The authorize request must carry `response_mode=pi.flow`. Without it the lab refuses the request with `400 invalid_request` and sets no cookie, so there is no redirect login path.
 
@@ -24,7 +24,7 @@ A standard OpenID Connect sign-in sends the user's browser to the provider's log
 | `GET /authorize` answers with | a 302 to the provider's login page | JSON: a flow id and a status such as `USERNAME_PASSWORD_REQUIRED` |
 | Who draws the login screen | the provider, on its own page | this app, from the status the flow returns |
 | Where the password goes | typed on the provider's page; this app never sees it | POSTed by this app to `/flows/{id}`; this app handles it |
-| How the user returns | a redirect back to the `redirect_uri` with a code | the user never leaves; `GET /resume` returns the code |
+| How the user returns | a redirect back to the `redirect_uri` with a code | the user never leaves; `GET /as/resume` returns the code |
 
 Why use pi.flow: the login stays in your own UI, so you can brand it and explain each step, with no browser hop. The cost: your app now handles the credentials, so it has to protect them. This lab is pi.flow only. An authorize request without `response_mode=pi.flow` is refused with `400`, and there is no redirect login path. PingOne's behaviour behind these steps is UNVERIFIED here.
 
@@ -69,24 +69,34 @@ curl -s -b "$J" -c "$J" -X POST "$H/mock/flows/<flow-id>" \
 Response, `200`:
 
 ```json
-{"id":"<flow-id>","status":"RESUME_REQUIRED","expiresAt":"2026-10-26T11:49:38.058Z","_links":{"self":{"href":"http://127.0.0.1:6171/mock/flows/<flow-id>"},"resume":{"href":"http://127.0.0.1:6171/mock/resume?flowId=<flow-id>"}},"resumeUrl":"http://127.0.0.1:6171/mock/resume?flowId=<flow-id>"}
+{"id":"<flow-id>","status":"COMPLETED","expiresAt":"2026-10-26T11:49:38.058Z","_links":{"self":{"href":"http://127.0.0.1:6171/mock/flows/<flow-id>"},"resume":{"href":"http://127.0.0.1:6171/mock/as/resume?flowId=<flow-id>"}},"resumeUrl":"http://127.0.0.1:6171/mock/as/resume?flowId=<flow-id>"}
 ```
+
+`COMPLETED` means the sign-in is done; it does not carry the code (step 3 fetches it). A wrong password is `400`, the flow keeps waiting, and the body names the reason in `details[].code`:
+
+```json
+{"id":"<flow-id>","status":"USERNAME_PASSWORD_REQUIRED","expiresAt":"2026-10-26T11:49:38.058Z","_links":{"self":{"href":"..."},"usernamePassword.check":{"href":"..."}},"code":"INVALID_DATA","message":"the username or password is incorrect","details":[{"code":"INVALID_CREDENTIALS","message":"the username or password is incorrect"}],"attempts":{"used":1,"max":3,"remaining":2}}
+```
+
+`details[].code` follows pingone-LAB's real run; the top-level `INVALID_DATA` is pingone-LAB's mock and the `attempts` counter is a lab invention (UNVERIFIED).
 
 Users who need more: `dana` (1 device) and `priya` (2 devices) get `DEVICE_SELECTION_REQUIRED` and then `OTP_REQUIRED`. The one-time passcode is `424242`. A step-up request (acr `mock:multi`) also asks for the device and passcode, so `mark` does too when the authorize request asks for it. Each step rotates the `ST` cookie, so always keep the jar.
 
-## 3. Resume: `GET /mock/resume` with the current cookie
+## 3. Resume: `GET /mock/as/resume` with the current cookie
 
 ```sh
-curl -s -b "$J" -c "$J" "$H/mock/resume?flowId=<flow-id>"
+curl -s -b "$J" -c "$J" "$H/mock/as/resume?flowId=<flow-id>"
 ```
 
 Response, `200`:
 
 ```json
-{"id":"<flow-id>","status":"COMPLETED","code":"<authorization-code>","state":"st1","redirect_uri":"https://app.lab.example/callback"}
+{"authorizeResponse":{"code":"<authorization-code>","state":"st1"}}
 ```
 
-A stale cookie (from before step 2) is refused with `401 INVALID_SESSION_TOKEN`. The code is single use. The mock burns it on its first exchange, right or wrong.
+The `authorizeResponse` body is pingone-LAB's mock shape. UNVERIFIED: a real PingOne may answer with a redirect to the `redirect_uri` instead.
+
+A stale cookie (from before step 2) is refused with `401 INVALID_SESSION_TOKEN` (a lab rule, UNVERIFIED). The code is single use. The mock burns it on its first exchange, right or wrong.
 
 ## 4. Token: `POST /mock/token` with the code and the PKCE verifier
 
@@ -169,6 +179,8 @@ Other answers: `slow_down` (poll too fast; the interval goes up by 5 s), `access
 |---|---|---|
 | authorize without `response_mode=pi.flow` | 400 | `{"error":"invalid_request", ...}` |
 | flow id that does not exist | 404 | `{"error":"not_found"}` |
-| resume with a stale cookie | 401 | `INVALID_SESSION_TOKEN` |
+| resume with a stale cookie | 401 | `INVALID_SESSION_TOKEN` (lab rule, UNVERIFIED) |
+| wrong password | 400 | `details[].code` = `INVALID_CREDENTIALS` |
+| resume before the flow is `COMPLETED` | 400 | `NOT_READY` |
 | token with a used or unknown code | 400 | `{"error":"invalid_grant","error_description":"unknown authorization code"}` |
 | binding message over 8 characters | 400 | `{"error":"invalid_binding_message", ...}` |

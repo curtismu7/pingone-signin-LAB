@@ -81,10 +81,13 @@ test('wrong password keeps the flow, counts attempts, then a right one succeeds'
   const bad = await d.submit('password', { username: 'mark', password: 'nope' });
   assert.equal(bad.status, 400);
   assert.equal(bad.json.status, 'USERNAME_PASSWORD_REQUIRED');
-  assert.equal(bad.json.error.code, 'INVALID_CREDENTIALS');
+  assert.equal(bad.json.code, 'INVALID_DATA');
+  assert.equal(bad.json.details[0].code, 'INVALID_CREDENTIALS');
+  assert.equal(bad.json.error, undefined, 'the real shape has no error envelope');
   assert.deepEqual(bad.json.attempts, { used: 1, max: 3, remaining: 2 });
   const ok = await d.submit('password', { username: 'mark', password: MOCK_PASSWORD });
-  assert.equal(ok.json.status, 'RESUME_REQUIRED');
+  assert.equal(ok.json.status, 'COMPLETED');
+  assert.ok(ok.json.resumeUrl.startsWith(`${BASE}/as/resume?flowId=`), 'COMPLETED carries the resume url');
 });
 
 test('unknown user looks like a wrong password (no enumeration)', async () => {
@@ -92,7 +95,7 @@ test('unknown user looks like a wrong password (no enumeration)', async () => {
   const d = driver();
   await d.authorize();
   const r = await d.submit('password', { username: 'ghost', password: 'x' });
-  assert.equal(r.json.error.code, 'INVALID_CREDENTIALS');
+  assert.equal(r.json.details[0].code, 'INVALID_CREDENTIALS');
 });
 
 test('lockout after N wrong passwords, even the right password is refused, then it expires', async () => {
@@ -213,6 +216,20 @@ test('flows are single use: a completed flow cannot be resumed or stepped again'
   const again = await d.resume();
   assert.equal(again.status, 400);
   assert.equal(again.json.code, 'FLOW_ALREADY_COMPLETED');
+});
+
+test('resume lives at /as/resume and answers { authorizeResponse: { code, state } }; the old /resume path is gone', async () => {
+  const { driver, fetchLike } = lab();
+  const d = driver();
+  await d.authorize();
+  await d.submit('password', { username: 'mark', password: MOCK_PASSWORD });
+  assert.equal(d.flow.status, 'COMPLETED');
+  assert.equal((await fetchLike(`${BASE}/resume?flowId=${d.flow.id}`, { headers: { cookie: d.cookieHeader() } })).status, 404, 'the unprefixed path no longer exists');
+  const r = await d.resume();
+  assert.equal(r.status, 200);
+  assert.deepEqual(Object.keys(r.json), ['authorizeResponse']);
+  assert.match(r.json.authorizeResponse.code, /^[A-Za-z0-9_-]{20,}$/);
+  assert.ok(r.json.authorizeResponse.state);
 });
 
 test('resume before the flow is ready is refused', async () => {

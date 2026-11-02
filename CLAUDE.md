@@ -1,6 +1,6 @@
 # PingOne Sign-in LAB (CLAUDE.md)
 
-An offline lab (tier: Demo) that shows a PingOne-style **pi.flow** sign-in against a **mock**: step-up (RFC 9470), CIBA with a mock phone, 16 scenarios in three vertical packs, a ReactFlow diagram, presenter mode. No tenant, no credentials, no outbound network. Everything (users, passwords, OTP, acr names, tokens) is fictional. Mock only: the header's Live button is refused with a message.
+An offline lab (tier: Demo) that teaches how a PingOne-style **pi.flow** sign-in *behaves*: failures, lockout, replay, MFA, step-up (RFC 9470) and CIBA with a mock phone (catalog A11, with A5 and A4 as real rows homed here), 16 scenarios in three vertical packs, a ReactFlow diagram, presenter mode. Mock only and a **simulation of behaviour**: no tenant, no credentials, no outbound network, everything (users, passwords, OTP, acr names, tokens) fictional. The header's Live button is refused with a pointer to `pingone-LAB` (http://127.0.0.1:5500), which holds the real PingOne shapes and live use. Keep the shared pi.flow shapes (`COMPLETED`, `GET /as/resume`, `INVALID_CREDENTIALS`) aligned with that lab's mock.
 
 ## Run and test
 
@@ -11,7 +11,7 @@ An offline lab (tier: Demo) that shows a PingOne-style **pi.flow** sign-in again
 ## Rules that bite
 
 - **Login is pi.flow only.** No redirect login, no link to an authorize URL, no `.redirect(`/`location` header; tests pin it. The refused redirect login exists only as scenario S08.
-- **Label the mock.** Anything this lab invented (acr `mock:single` / `mock:multi`, status names, the 8 character `binding_message` limit, `/resume` JSON, the +5 s `slow_down`, `/phone/*`) must show as "mock" or UNVERIFIED in the UI and docs. Never present it as a PingOne fact.
+- **Label the mock.** Anything this lab invented (acr `mock:single` / `mock:multi`, status order (the MFA path), the cookie rotating per step, the lockout rule, the 8 character `binding_message` limit, the `authorizeResponse` resume body, the +5 s `slow_down`, `/phone/*`) must show as "mock" or UNVERIFIED in the UI and docs. Never present it as a PingOne fact.
 - The simulation banner (`MOCK: offline, no tenant`) is on every tab, also in presenter mode. The Mock | Live toggle and the mode are in the header on every page; Live is refused (no live mode exists).
 - All server and user text renders inert (React text nodes; `Inert`). No `innerHTML`.
 - Test scripts use globs: `node --test test/*.test.js`, never a directory. No EC `generateKeyPair` or `generateKeyPairSync` anywhere (tokens are HS256 with a throwaway key).

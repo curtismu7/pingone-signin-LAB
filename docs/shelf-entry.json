@@ -1,16 +1,14 @@
 {
-  "demos": [
-    {
-      "id": "pingone-signin-lab",
-      "name": "PingOne Sign-in LAB",
-      "catalogId": "A11",
-      "kind": "Demo",
-      "description": "An offline mock of a PingOne pi.flow sign-in: drive it step by step, watch the session-token cookie rotate, and see step-up (RFC 9470) and CIBA with a mock phone. Mock only, no tenant.",
-      "url": "http://localhost:6171",
-      "healthPath": "/api/health",
-      "composeFile": "./docker-compose.yml",
-      "composeOverlays": [],
-      "notes": "Host-run: ./scripts/run.sh (port 6171, run `npm run build` once for the UI). Docker: docker compose up --build -d (published on 127.0.0.1:6171 only). Mock only: no tenant, no credentials. composeFile is relative to this repo's root; the shelf resolves it against wherever the repo is checked out."
-    }
-  ]
+  "id": "pingone-signin-lab",
+  "name": "PingOne Sign-in LAB",
+  "kind": "Demo",
+  "description": "How a PingOne-style pi.flow sign-in behaves: failures, lockout, replay, MFA, step-up (RFC 9470) and CIBA with a mock phone. Mock only, a simulation of behaviour. Real PingOne shapes and live use are in pingone-LAB.",
+  "url": "http://localhost:6171",
+  "healthPath": "/api/health",
+  "composeFile": "docker-compose.yml",
+  "composeOverlays": [],
+  "port": 6171,
+  "notes": "Host-run: npm install && npm run build && npm start (port 6171, loopback only; mock only, no settings). Docker: docker compose up --build -d (publishes 127.0.0.1:6171 only). Catalog id A11, with A5 (Step-up auth) and A4 (CIBA lab) as real catalog rows homed here (owner). composeFile is relative to this repo's root.",
+  "catalogId": "A11",
+  "tags": ["pingone", "pingone-davinci", "sign-in-and-mfa", "ciba", "step-up", "oidc", "simulated"]
 }

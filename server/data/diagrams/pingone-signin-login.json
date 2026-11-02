@@ -98,7 +98,7 @@
     {
       "source": "bff",
       "target": "op",
-      "label": "GET /resume"
+      "label": "GET /as/resume"
     },
     {
       "source": "bff",
@@ -129,7 +129,7 @@
     },
     {
       "title": "Send the password",
-      "what": "POST /flows/{id} with the password. The status moves on and the ST cookie is replaced.",
+      "what": "POST /flows/{id} with the password. The status moves on (COMPLETED when no MFA is demanded) and the ST cookie is replaced (a lab rule, UNVERIFIED). A wrong password is a 400 with details[].code INVALID_CREDENTIALS.",
       "edges": [
         2
       ]
@@ -143,7 +143,7 @@
     },
     {
       "title": "Resume",
-      "what": "GET /resume with the current cookie. A stale cookie is refused. The mock answers with an authorization code (UNVERIFIED for a real PingOne).",
+      "what": "GET /as/resume with the current cookie, once the flow is COMPLETED. A stale cookie is refused (a lab rule, UNVERIFIED). The mock answers with the code in authorizeResponse, the shape pingone-LAB uses (UNVERIFIED for a real PingOne, which may redirect).",
       "edges": [
         4
       ]

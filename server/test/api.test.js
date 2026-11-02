@@ -109,20 +109,20 @@ test('live /mock: pi.flow login over HTTP, cookie rotation, redirect refusal, re
     cookie = /^(ST=[^;]+)/.exec(pw.headers.get('set-cookie'))[1];
     assert.notEqual(cookie, old);
     const step = await j(pw);
-    assert.equal(step.status, 'RESUME_REQUIRED');
-    assert.ok(step.resumeUrl.startsWith(`${base}/mock/resume?flowId=`));
+    assert.equal(step.status, 'COMPLETED');
+    assert.ok(step.resumeUrl.startsWith(`${base}/mock/as/resume?flowId=`));
 
     assert.equal((await fetch(step.resumeUrl, { headers: { cookie: old } })).status, 401);
     const resumed = await j(await fetch(step.resumeUrl, { headers: { cookie } }));
-    assert.equal(resumed.state, 'st-1');
+    assert.equal(resumed.authorizeResponse.state, 'st-1');
 
     const tok = (code, v) => fetch(`${base}/mock/token`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', code, code_verifier: v, redirect_uri: 'https://app.lab.example/callback', client_id: 'lab-app' }) });
-    const ok = await tok(resumed.code, verifier);
+    const ok = await tok(resumed.authorizeResponse.code, verifier);
     assert.equal(ok.status, 200);
     const tokens = await j(ok);
     const claims = JSON.parse(Buffer.from(tokens.id_token.split('.')[1], 'base64url'));
     assert.equal(claims.nonce, 'no-1');
-    assert.equal((await tok(resumed.code, verifier)).status, 400);
+    assert.equal((await tok(resumed.authorizeResponse.code, verifier)).status, 400);
 
     const rs = await fetch(`${base}/mock/rs/transfer`, { method: 'POST', headers: { authorization: `Bearer ${tokens.access_token}`, 'content-type': 'application/json' }, body: '{"amount":5,"to":"x"}' });
     assert.equal(rs.status, 401);

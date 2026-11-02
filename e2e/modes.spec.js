@@ -13,6 +13,7 @@ test('Mock | Live toggle, mode and banner are in the header on every tab; Live i
   }
   await page.getByTestId('mode-live').click();
   await expect(page.getByTestId('mode-note')).toContainText('Live mode is not available in this lab');
+  await expect(page.getByTestId('mode-note')).toContainText('pingone-LAB');
   await expect(page.getByTestId('mode-mock')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('mode-live')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('banner')).toContainText('MOCK');
@@ -49,7 +50,7 @@ test('P toggles presenter mode and Esc leaves it; the banner stays; modifier key
 test('action buttons keep focus when they are not ready: aria-disabled, not disabled; the main landmark is there', async ({ page }) => {
   await page.goto('/#/signin');
   await expect(page.getByRole('main')).toHaveCount(1);
-  const resume = page.getByRole('button', { name: /Resume \(GET \/resume\)/ });
+  const resume = page.getByRole('button', { name: /Resume \(GET \/as\/resume\)/ });
   await expect(resume).toHaveAttribute('aria-disabled', 'true');
   await expect(resume).not.toHaveAttribute('disabled', /.*/);
   await resume.focus();

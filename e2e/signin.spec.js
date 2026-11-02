@@ -5,9 +5,10 @@ test('happy login: password only, tokens decoded, cookie rotates in the trace', 
   await expect(page.getByTestId('mode')).toHaveText('MOCK: offline, no tenant');
   await openFlow(page);
   await password(page, 'mark');
-  await expect(page.getByTestId('flow-status')).toContainText('RESUME_REQUIRED');
-  await page.getByRole('button', { name: /Resume/ }).click();
   await expect(page.getByTestId('flow-status')).toContainText('COMPLETED');
+  await expect(page.getByRole('button', { name: /Exchange the code/ })).toHaveAttribute('aria-disabled', 'true');
+  await page.getByRole('button', { name: /Resume/ }).click();
+  await expect(page.getByRole('button', { name: /Exchange the code/ })).not.toHaveAttribute('aria-disabled', 'true');
   await page.getByRole('button', { name: /Exchange the code/ }).click();
   await expect(page.getByTestId('signed-in')).toBeVisible();
   const tokens = page.getByTestId('tokens');
@@ -47,7 +48,7 @@ test('wrong password, then success', async ({ page, consoleErrors }) => {
   await expect(page.getByTestId('flow-error')).toContainText('Attempts used 1 of 3');
   await expect(page.getByTestId('flow-status')).toContainText('USERNAME_PASSWORD_REQUIRED');
   await password(page, 'mark');
-  await expect(page.getByTestId('flow-status')).toContainText('RESUME_REQUIRED');
+  await expect(page.getByTestId('flow-status')).toContainText('COMPLETED');
   expect(noUnexpectedErrors(consoleErrors, { allowResourceFailures: true })).toEqual([]);
 });
 

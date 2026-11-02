@@ -46,7 +46,7 @@ test('two workspaces share nothing: flows, codes, lockouts, the trace sink and t
     };
     for (let i = 0; i < 3; i++) await attempt(a.base, 'wrong');
     assert.equal((await attempt(a.base, 'mock-password')).error.code, 'ACCOUNT_LOCKED', 'alpha: locked even with the right password');
-    assert.equal((await attempt(b.base, 'mock-password')).status, 'RESUME_REQUIRED', 'beta: mark signs in normally');
+    assert.equal((await attempt(b.base, 'mock-password')).status, 'COMPLETED', 'beta: mark signs in normally');
     assert.ok((await (await post(a.base, '/api/run', { scenario: 'lockout' })).json()).pass);
     // the trace sinks are separate
     const ta = (await (await fetch(`${a.base}/api/trace`)).json());

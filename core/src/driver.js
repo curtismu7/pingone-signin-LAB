@@ -40,7 +40,7 @@ export function createTracer(fetchLike) {
 export class PiFlowDriver {
   constructor({ fetchLike, baseUrl, clientId, redirectUri, tracer = createTracer(fetchLike), scope = 'openid' }) {
     this.baseUrl = baseUrl.replace(/\/+$/, ''); this.clientId = clientId; this.redirectUri = redirectUri; this.scope = scope;
-    this.tracer = tracer; this.jar = {}; this.flow = null; this.pkce = null; this.code = null;
+    this.tracer = tracer; this.jar = {}; this.flow = null; this.pkce = null; this.code = null; this.state = null;
   }
 
   get trace() { return this.tracer.entries; }
@@ -75,12 +75,12 @@ export class PiFlowDriver {
   }
 
   async resume(note = '') {
-    const r = await this.tracer.call('Resume: GET /resume?flowId=', {
-      url: `${this.baseUrl}/resume?flowId=${this.flow?.id ?? 'none'}`, headers: this.#hdrs(),
-      note: note || 'Needs the CURRENT session-token cookie. A stale one is refused.',
+    const r = await this.tracer.call('Resume: GET /as/resume?flowId=', {
+      url: `${this.baseUrl}/as/resume?flowId=${this.flow?.id ?? 'none'}`, headers: this.#hdrs(),
+      note: note || 'Needs the CURRENT session-token cookie (a lab rule, UNVERIFIED: a stale one is refused).',
     });
     this.#merge(r.setCookies);
-    if (r.status === 200) this.code = r.json.code;
+    if (r.status === 200) { this.code = r.json.authorizeResponse.code; this.state = r.json.authorizeResponse.state; }
     return r;
   }
 
@@ -102,7 +102,7 @@ export class PiFlowDriver {
       if (last.status === 200) break;
       if (last.json?.error?.code === 'ACCOUNT_LOCKED') return { ok: false, outcome: 'locked', stage: 'password', error: 'ACCOUNT_LOCKED', status: last.status };
     }
-    if (!last || last.status !== 200) return { ok: false, outcome: 'credentials_rejected', stage: 'password', error: last?.json?.error?.code, status: last?.status };
+    if (!last || last.status !== 200) return { ok: false, outcome: 'credentials_rejected', stage: 'password', error: last?.json?.details?.[0]?.code ?? last?.json?.error?.code, status: last?.status };
     if (this.flow.status === 'DEVICE_SELECTION_REQUIRED') {
       const pick = deviceId || this.flow._embedded.devices[0].id;
       const r = await this.submit('device', { device: { id: pick } });
@@ -112,13 +112,13 @@ export class PiFlowDriver {
       const r = await this.submit('otp', { otp });
       if (r.status !== 200) return { ok: false, outcome: 'refused', stage: 'otp', error: r.json?.error?.code, status: r.status };
     }
-    if (this.flow.status !== 'RESUME_REQUIRED') return { ok: false, outcome: 'refused', stage: 'flow', error: this.flow.status };
+    if (this.flow.status !== 'COMPLETED') return { ok: false, outcome: 'refused', stage: 'flow', error: this.flow.status };
     const rs = await this.resume();
     if (rs.status !== 200) return { ok: false, outcome: 'refused', stage: 'resume', error: rs.json?.code, status: rs.status };
     const t = await this.exchange();
     if (t.status !== 200) return { ok: false, outcome: 'refused', stage: 'token', error: t.json?.error, status: t.status };
     const claims = decodeJwt(t.json.id_token).payload;
-    return { ok: true, outcome: 'signed_in', tokens: t.json, claims, nonceOk: claims.nonce === this.pkce.nonce, stateOk: rs.json.state === this.pkce.state };
+    return { ok: true, outcome: 'signed_in', tokens: t.json, claims, nonceOk: claims.nonce === this.pkce.nonce, stateOk: this.state === this.pkce.state };
   }
 }
 
