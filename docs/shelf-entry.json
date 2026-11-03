@@ -10,5 +10,16 @@
   "port": 6171,
   "notes": "Host-run: npm install && npm run build && npm start (port 6171, loopback only; mock only, no settings). Docker: docker compose up --build -d (publishes 127.0.0.1:6171 only). Catalog id A11, with A5 (Step-up auth) and A4 (CIBA lab) as real catalog rows homed here (owner). composeFile is relative to this repo's root.",
   "catalogId": "A11",
-  "tags": ["pingone", "pingone-davinci", "sign-in-and-mfa", "ciba", "step-up", "oidc", "simulated"]
+  "tags": [
+    "pingone",
+    "pingone-davinci",
+    "sign-in-and-mfa",
+    "ciba",
+    "step-up",
+    "oidc",
+    "simulated"
+  ],
+  "pingProducts": [
+    "pingone"
+  ]
 }
