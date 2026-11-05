@@ -280,7 +280,7 @@ test('README follows the standard: title ends in LAB, Tier/Repo/Catalog lines, t
   const r = read('README.md');
   assert.match(r.split('\n')[0], /^# .+ LAB$/);
   assert.match(r, /^Tier: Demo$/m);
-  assert.match(r, /^Repo: https:\/\/github\.com\/ping-sandbox\/pingone-signin-LAB$/m);
+  assert.match(r, /^Repo: https:\/\/github.com/curtismu7\/pingone-signin-LAB$/m);
   assert.match(r, /^Catalog: A11$/m);
   const heads = [...r.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
   const want = ['What is simulated', 'Run from a clone', 'Settings file', 'Ports, and what to do if the port is taken', 'Mock and live modes', 'Health, doctor and reset', 'Docker (optional)', 'Tests', 'Troubleshooting', 'Ownership'];
