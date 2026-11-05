@@ -94,6 +94,7 @@ export function createApp({
     res.json({ clean: findings.length === 0, scanned: storyCorpus().length, findings });
   });
   api.use((_req, res) => res.status(404).json({ error: 'not_found' }));
+  app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
   app.use('/api', api);
 
   const mock = express.Router();
@@ -126,7 +127,6 @@ export function createApp({
 export function mountWeb(app, webDist) {
   if (!fs.existsSync(path.join(webDist, 'index.html'))) return;
   const page = (res) => { res.set('Content-Security-Policy', CSP); res.set('Cache-Control', 'no-store'); };
-app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
   app.use(express.static(webDist, { index: false, setHeaders: (res, file) => { if (file.endsWith('.html')) page(res); } }));
   // Only extension-less paths are UI routes; a missing /assets/x.js is a 404, not an HTML page that a script tag would choke on.
   app.get(/^\/(?!api\/|mock\/).*/, (req, res) => {
