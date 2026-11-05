@@ -1,6 +1,6 @@
 # PingOne Sign-in LAB
 
-A lab that teaches how a PingOne-style **pi.flow** sign-in *behaves*: wrong passwords, lockout, replay, a rotating session-token cookie, MFA, step-up (RFC 9470) and CIBA with a mock phone. It is mock only and a **simulation of behaviour**, not a copy of PingOne. For the real PingOne shapes and live use, see `pingone-LAB` (`ping-sandbox/pingone-LAB`, http://127.0.0.1:5500).
+A lab that teaches how a PingOne-style **pi.flow** sign-in *behaves*: wrong passwords, lockout, replay, a rotating session-token cookie, MFA, step-up (RFC 9470) and CIBA with a mock phone. It is mock only and a **simulation of behaviour**, not a copy of PingOne. For the real PingOne shapes and live use, see `pingone-LAB` (`curtismu7/pingone-LAB`, http://127.0.0.1:5500).
 
 Tier: Demo
 Repo: https://github.com/curtismu7/pingone-signin-LAB
