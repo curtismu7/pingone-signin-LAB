@@ -12,6 +12,7 @@ import { createTraceSink, resolveWorkspace, validWorkspaceId, workspaceDir } fro
 import { loadCustomerConfig } from './customerConfig.js';
 import { runScenario, runAll } from './runner.js';
 import { createDiagramsRouter } from './diagrams.js';
+import { shelfInfo } from './shelfLink.js';
 
 const DEFAULT_WEB_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../web/dist');
 // Same shortening the trace uses (ASCII dots: a header value must be latin1), so the UI can show the rotating session-token cookie (it is HttpOnly, the page can not read it).
@@ -125,6 +126,7 @@ export function createApp({
 export function mountWeb(app, webDist) {
   if (!fs.existsSync(path.join(webDist, 'index.html'))) return;
   const page = (res) => { res.set('Content-Security-Policy', CSP); res.set('Cache-Control', 'no-store'); };
+app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
   app.use(express.static(webDist, { index: false, setHeaders: (res, file) => { if (file.endsWith('.html')) page(res); } }));
   // Only extension-less paths are UI routes; a missing /assets/x.js is a 404, not an HTML page that a script tag would choke on.
   app.get(/^\/(?!api\/|mock\/).*/, (req, res) => {

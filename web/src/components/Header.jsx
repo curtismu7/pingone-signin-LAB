@@ -1,4 +1,5 @@
 import React from "react";
+import ShelfLink from "./ShelfLink.jsx";
 
 // Shown when someone presses Live. This lab is an offline mock of a pi.flow sign-in: it has no live mode to switch to.
 export const LIVE_REFUSED = "Live mode is not available in this lab. It is an offline mock of a PingOne pi.flow sign-in, with no tenant connection and no credentials, so the page stays in Mock. For real PingOne shapes and live use, open pingone-LAB (owner-run, http://127.0.0.1:5500).";
@@ -16,6 +17,7 @@ export default function Header({ catalog = null, liveRefused, onMock, onLive, pr
           {catalog && catalog.workspace !== "default" && <span className="mode" data-testid="workspace">workspace {catalog.workspace}</span>}
         </h1>
         <div className="tools-right">
+          <ShelfLink />
           <div className="seg" role="group" aria-label="Mode">
             <button type="button" aria-pressed="true" onClick={onMock} data-testid="mode-mock">Mock</button>
             <button type="button" aria-pressed="false" onClick={onLive} data-testid="mode-live">Live</button>
