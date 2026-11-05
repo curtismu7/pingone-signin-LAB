@@ -3,7 +3,7 @@
 A lab that teaches how a PingOne-style **pi.flow** sign-in *behaves*: wrong passwords, lockout, replay, a rotating session-token cookie, MFA, step-up (RFC 9470) and CIBA with a mock phone. It is mock only and a **simulation of behaviour**, not a copy of PingOne. For the real PingOne shapes and live use, see `pingone-LAB` (`ping-sandbox/pingone-LAB`, http://127.0.0.1:5500).
 
 Tier: Demo
-Repo: https://github.com/ping-sandbox/pingone-signin-LAB
+Repo: https://github.com/curtismu7/pingone-signin-LAB
 Catalog: A11
 
 Catalog note: `A11` (the pi.flow native sign-in kit) is this lab's catalog id. `A5` (Step-up auth, RFC 9470) and `A4` (CIBA lab) are real catalog rows with this lab as their home (owner decision); they are also listed as tags in the content pack. This build did not re-check the rows against a published catalog.
@@ -58,7 +58,7 @@ Each runs against three verticals (travel with Mark, Dana, Priya; banking with A
 Prerequisites: Node 26 or newer. Docker only if you use the Docker form. Mock mode needs no setup at all: no tenant, no credentials, no settings file.
 
 ```
-git clone https://github.com/ping-sandbox/pingone-signin-LAB.git
+git clone https://github.com/curtismu7/pingone-signin-LAB.git
 cd pingone-signin-LAB
 npm ci
 npm run build         # builds web/dist, which the server serves at /
