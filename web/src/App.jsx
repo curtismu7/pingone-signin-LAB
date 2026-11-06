@@ -48,8 +48,8 @@ export default function App() {
     return () => window.removeEventListener("keydown", on);
   }, [present, setPresentMode]);
 
-  const cycle = () => { const next = { system: "light", light: "dark", dark: "system" }[theme]; setTheme(next); write("psl.theme", next); };
-  const head = { liveRefused, onMock: () => setLiveRefused(false), onLive: () => setLiveRefused(true), present, onPresent: () => setPresentMode(!present), theme, onTheme: cycle };
+  const setThemePersist = (v) => { setTheme(v); write("psl.theme", v); };
+  const head = { liveRefused, onMock: () => setLiveRefused(false), onLive: () => setLiveRefused(true), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist };
 
   const shell = (body, header) => (
     <>

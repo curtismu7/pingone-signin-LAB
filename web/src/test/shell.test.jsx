@@ -31,13 +31,13 @@ describe("shell", () => {
     expect(screen.getByRole("tab", { name: /Step-up/ })).toHaveFocus();
   });
 
-  it("theme button cycles system, light, dark and sets data-theme", async () => {
+  it("theme select sets data-theme", async () => {
     const user = await open();
-    await user.click(screen.getByRole("button", { name: /Theme: system/ }));
+    await user.selectOptions(screen.getByTestId("theme"), "light");
     expect(document.documentElement.dataset.theme).toBe("light");
-    await user.click(screen.getByRole("button", { name: /Theme: light/ }));
+    await user.selectOptions(screen.getByTestId("theme"), "dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
-    await user.click(screen.getByRole("button", { name: /Theme: dark/ }));
+    await user.selectOptions(screen.getByTestId("theme"), "system");
     expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 

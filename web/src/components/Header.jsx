@@ -32,7 +32,13 @@ export default function Header({ catalog = null, liveRefused, onMock, onLive, pr
           )}
           {onReset && <button type="button" onClick={onReset}>Reset lab</button>}
           <button type="button" aria-pressed={present} onClick={onPresent} title="Presenter mode (P, Esc to leave): large text, no raw panes, arrow keys step the diagram">Present</button>
-          <button type="button" onClick={onTheme} title="Theme: system, light, dark">Theme: {theme}</button>
+          <label className="inline">Theme
+            <select value={theme} onChange={(e) => onTheme(e.target.value)} data-testid="theme">
+              <option value="system">Auto</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
         </div>
       </header>
       {liveRefused && <p className="mode-note" role="status" data-testid="mode-note">{LIVE_REFUSED}</p>}
