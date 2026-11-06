@@ -34,7 +34,7 @@ export default function Header({ catalog = null, liveRefused, onMock, onLive, pr
           <button type="button" aria-pressed={present} onClick={onPresent} title="Presenter mode (P, Esc to leave): large text, no raw panes, arrow keys step the diagram">Present</button>
           <label className="inline">Theme
             <select value={theme} onChange={(e) => onTheme(e.target.value)} data-testid="theme">
-              <option value="system">Auto</option>
+              <option value="auto">Auto</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
             </select>

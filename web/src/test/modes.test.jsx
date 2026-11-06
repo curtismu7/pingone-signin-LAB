@@ -30,7 +30,7 @@ describe("Mock | Live toggle (every page)", () => {
   });
 
   it("is in the header while the lab is still loading, and when it could not load", () => {
-    render(<Header liveRefused={false} onMock={() => {}} onLive={() => {}} present={false} onPresent={() => {}} theme="system" onTheme={() => {}} />);
+    render(<Header liveRefused={false} onMock={() => {}} onLive={() => {}} present={false} onPresent={() => {}} theme="auto" onTheme={() => {}} />);
     expect(screen.getByRole("group", { name: "Mode" })).toBeInTheDocument();
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
     expect(screen.queryByRole("button", { name: "Reset lab" })).toBeNull();

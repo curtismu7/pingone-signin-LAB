@@ -37,8 +37,9 @@ describe("shell", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
     await user.selectOptions(screen.getByTestId("theme"), "dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
-    await user.selectOptions(screen.getByTestId("theme"), "system");
+    await user.selectOptions(screen.getByTestId("theme"), "auto");
     expect(document.documentElement.dataset.theme).toBeUndefined();
+    expect(localStorage.getItem("psl.theme")).toBeNull();
   });
 
   it("only ever calls its own origin paths under /api and /mock", async () => {

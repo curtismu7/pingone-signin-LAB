@@ -23,13 +23,13 @@ export default function App() {
   const [loadError, setLoadError] = useState(null);
   const [tab, setTab] = useState(tabFromHash);
   const [present, setPresent] = useState(() => read("psl.present", "0") === "1");
-  const [theme, setTheme] = useState(() => (["light", "dark"].includes(read("psl.theme", "")) ? read("psl.theme", "") : "system"));
+  const [theme, setTheme] = useState(() => (["light", "dark"].includes(read("psl.theme", "")) ? read("psl.theme", "") : "auto"));
   const [liveRefused, setLiveRefused] = useState(false);
 
   useEffect(() => { Promise.all([getCatalog(), loadFlows()]).then(([c, f]) => { setFlows(f); setCatalog(c); }).catch((e) => setLoadError(e.message)); }, []);
   useEffect(() => { const on = () => setTab(tabFromHash()); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
   useEffect(() => { if (present) document.documentElement.dataset.present = "1"; else delete document.documentElement.dataset.present; }, [present]);
-  useEffect(() => { if (theme === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => { if (theme === "auto") { try { localStorage.removeItem("psl.theme"); } catch { /* not remembered */ } delete document.documentElement.dataset.theme; } else { write("psl.theme", theme); document.documentElement.dataset.theme = theme; } }, [theme]);
 
   const setPresentMode = useCallback((next) => {
     write("psl.present", next ? "1" : "0"); setPresent(next);
@@ -48,7 +48,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", on);
   }, [present, setPresentMode]);
 
-  const setThemePersist = (v) => { setTheme(v); write("psl.theme", v); };
+  const setThemePersist = (v) => { setTheme(v); };
   const head = { liveRefused, onMock: () => setLiveRefused(false), onLive: () => setLiveRefused(true), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist };
 
   const shell = (body, header) => (
