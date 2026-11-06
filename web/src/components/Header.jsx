@@ -1,14 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import ShelfLink from "./ShelfLink.jsx";
 import { pageTraceparent } from "../lib/traceparent.js";
 
-// Shown when someone presses Live. This lab is an offline mock of a pi.flow sign-in: it has no live mode to switch to.
+// Shown when the server refuses Real (409), or as the Real button's tooltip while it is unavailable. The server's /api/info
+// reason is the honest one; this is the fallback only if the server could not be asked.
 export const LIVE_REFUSED = "Live mode is not available in this lab. It is an offline mock of a PingOne pi.flow sign-in, with no tenant connection and no credentials, so the page stays in Mock. For real PingOne shapes and live use, open pingone-LAB (owner-run, http://127.0.0.1:5500).";
 
-// The header on every page, including while the lab is still loading: the title, the Mock | Live toggle, the mode, and the controls.
-// `catalog`, `onVertical` and `onReset` are absent until the lab has loaded.
-export default function Header({ catalog = null, liveRefused, onMock, onLive, present, onPresent, theme, onTheme, onVertical = null, onReset = null }) {
+// The header on every page, including while the lab is still loading: the title, the Mock | Real toggle, the mode, and the controls.
+// `catalog`, `onVertical` and `onReset` are absent until the lab has loaded. Rule 19: the toggle is server-side (POST /api/mode);
+// Real is disabled with the server's reason while it is unavailable, so a disabled button sends nothing.
+export default function Header({ catalog = null, onMock, onLive, modeInfo, present, onPresent, theme, onTheme, onVertical = null, onReset = null }) {
   const customer = catalog?.customer || {};
+  const realAvailable = modeInfo ? modeInfo.realAvailable !== false : null; // null = not known yet
+  const [note, setNote] = useState("");
+  const pressLive = async () => {
+    if (realAvailable === false) { setNote(modeInfo.realReason || LIVE_REFUSED); return; }
+    const r = await onLive();
+    if (r && !r.ok) setNote(r.data?.message || LIVE_REFUSED); else setNote("");
+  };
   return (
     <>
       <header className="top">
@@ -19,9 +28,10 @@ export default function Header({ catalog = null, liveRefused, onMock, onLive, pr
         </h1>
         <div className="tools-right">
           <ShelfLink traceparent={pageTraceparent} />
-          <div className="seg" role="group" aria-label="Mode">
-            <button type="button" aria-pressed="true" onClick={onMock} data-testid="mode-mock">Mock</button>
-            <button type="button" aria-pressed="false" onClick={onLive} data-testid="mode-live">Live</button>
+          <div className="seg mode-toggle" role="group" aria-label="Mode">
+            <button type="button" aria-pressed="true" onClick={() => { setNote(""); onMock(); }} data-testid="mode-mock">Mock</button>
+            <button type="button" aria-pressed="false" disabled={realAvailable === false}
+              title={realAvailable === false ? (modeInfo?.realReason || LIVE_REFUSED) : undefined} onClick={pressLive} data-testid="mode-live">Live</button>
           </div>
           {catalog && onVertical && (
             <label className="inline">Vertical
@@ -41,7 +51,7 @@ export default function Header({ catalog = null, liveRefused, onMock, onLive, pr
           </label>
         </div>
       </header>
-      {liveRefused && <p className="mode-note" role="status" data-testid="mode-note">{LIVE_REFUSED}</p>}
+      {note && <p className="mode-note" role="status" data-testid="mode-note">{note}</p>}
     </>
   );
 }

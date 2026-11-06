@@ -30,24 +30,35 @@ describe("Mock | Live toggle (every page)", () => {
   });
 
   it("is in the header while the lab is still loading, and when it could not load", () => {
-    render(<Header liveRefused={false} onMock={() => {}} onLive={() => {}} present={false} onPresent={() => {}} theme="auto" onTheme={() => {}} />);
+    render(<Header modeInfo={null} onMock={() => {}} onLive={() => {}} present={false} onPresent={() => {}} theme="auto" onTheme={() => {}} />);
     expect(screen.getByRole("group", { name: "Mode" })).toBeInTheDocument();
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
     expect(screen.queryByRole("button", { name: "Reset lab" })).toBeNull();
   });
 
-  it("Live is refused with an honest message and the page stays Mock; Mock clears the message", async () => {
+  it("Real is disabled with the server's honest reason (409 contract), and the page stays Mock; Mock clears the note", async () => {
     const user = await open();
-    expect(screen.queryByTestId("mode-note")).toBeNull();
-    await user.click(screen.getByTestId("mode-live"));
-    expect(screen.getByTestId("mode-note")).toHaveTextContent(/Live mode is not available in this lab/);
-    expect(screen.getByTestId("mode-note")).toHaveTextContent(/pingone-LAB.*127\.0\.0\.1:5500/);
-    expect(screen.getByTestId("mode-note")).toHaveTextContent(/no tenant connection/);
+    await waitFor(() => expect(screen.getByTestId("mode-live")).toBeDisabled());
+    expect(screen.getByTestId("mode-live").getAttribute("title")).toMatch(/Real \(live\) is not available in this lab/);
+    await user.click(screen.getByTestId("mode-live")); // a disabled button sends nothing
+    expect(fake.state.calls.some((c) => c.path === "/api/mode")).toBe(false);
     expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("mode-live")).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK: offline, no tenant/);
     await user.click(screen.getByTestId("mode-mock"));
     expect(screen.queryByTestId("mode-note")).toBeNull();
+  });
+
+  it("the server answers GET /api/info with the rule-19 shape and 409s a Real switch", async () => {
+    const info = await (await fetch("/api/info")).json();
+    expect(info.source).toBe("mock");
+    expect(info.realAvailable).toBe(false);
+    expect(info.realReason).toMatch(/not available in this lab/);
+    const r = await fetch("/api/mode", { method: "POST", headers: { "content-type": "application/json", origin: window.location.origin }, body: JSON.stringify({ source: "real" }) });
+    expect(r.status).toBe(409);
+    expect((await r.json()).error).toBe("real_not_available");
+    const bad = await fetch("/api/mode", { method: "POST", headers: { "content-type": "application/json", origin: window.location.origin }, body: JSON.stringify({ source: "live" }) });
+    expect(bad.status).toBe(400);
   });
 });
 

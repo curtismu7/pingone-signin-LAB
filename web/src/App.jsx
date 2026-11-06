@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { getCatalog, resetLab } from "./lib/api.js";
+import { getCatalog, getModeInfo, postMode, resetLab } from "./lib/api.js";
 import Banner from "./components/Banner.jsx";
 import Header from "./components/Header.jsx";
 import SignInTab, { useLogin } from "./tabs/SignInTab.jsx";
@@ -24,7 +24,16 @@ export default function App() {
   const [tab, setTab] = useState(tabFromHash);
   const [present, setPresent] = useState(() => read("psl.present", "0") === "1");
   const [theme, setTheme] = useState(() => (["light", "dark"].includes(read("psl.theme", "")) ? read("psl.theme", "") : "auto"));
-  const [liveRefused, setLiveRefused] = useState(false);
+  const [modeInfo, setModeInfo] = useState(null); // GET /api/info; null = not known yet
+  useEffect(() => { getModeInfo().then((r) => setModeInfo(r.ok ? r.data : { realAvailable: false, realReason: null })).catch(() => {}); }, []);
+  // Rule 19: the toggle is server-side. Mock is the only mode here, so switching is a POST that the server answers
+  // (409 for Real, with the honest reason); the data is reloaded either way.
+  const switchMode = useCallback(async (source) => {
+    if (source === "mock") { return { ok: true, data: {} }; }
+    const r = await postMode("real");
+    setModeInfo(r.ok ? r.data : { realAvailable: false, ...(r.data || {}) });
+    return r;
+  }, []);
 
   useEffect(() => { Promise.all([getCatalog(), loadFlows()]).then(([c, f]) => { setFlows(f); setCatalog(c); }).catch((e) => setLoadError(e.message)); }, []);
   useEffect(() => { const on = () => setTab(tabFromHash()); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
@@ -49,7 +58,7 @@ export default function App() {
   }, [present, setPresentMode]);
 
   const setThemePersist = (v) => { setTheme(v); };
-  const head = { liveRefused, onMock: () => setLiveRefused(false), onLive: () => setLiveRefused(true), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist };
+  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist };
 
   const shell = (body, header) => (
     <>

@@ -13,6 +13,9 @@ export async function postJson(path, body = {}) {
   return data;
 }
 export const getCatalog = (vertical) => getJson(`/api/catalog${vertical ? `?vertical=${encodeURIComponent(vertical)}` : ""}`);
+// Rule 19: the server-side Mock/Real toggle. Never throws on 409: the header shows the server's reason.
+export const getModeInfo = () => fetch("/api/info", { headers: { traceparent: pageTraceparent() } }).then(async (r) => ({ ok: r.ok, status: r.status, data: await r.json().catch(() => ({})) }));
+export const postMode = (source) => fetch("/api/mode", { method: "POST", headers: { "content-type": "application/json", traceparent: pageTraceparent() }, body: JSON.stringify({ source }) }).then(async (r) => ({ ok: r.ok, status: r.status, data: await r.json().catch(() => ({})) }));
 export const resetLab = () => postJson("/api/reset");
 export const runScenario = (scenario, vertical) => postJson("/api/run", { scenario, vertical });
 export const runAll = (vertical) => postJson("/api/run-all", { vertical });

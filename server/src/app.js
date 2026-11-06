@@ -93,6 +93,16 @@ export function createApp({
     const findings = storyCorpus().map(({ where, text }) => ({ where, hosts: scanHosts(text) })).filter((x) => x.hosts.length);
     res.json({ clean: findings.length === 0, scanned: storyCorpus().length, findings });
   });
+  // Rule 19: the Mock/Real toggle. This lab is an offline mock with no live variant, so Real is honestly unavailable;
+  // the toggle still exists and switching to it is a 409 with the reason.
+  const REAL_UNAVAILABLE = 'Real (live) is not available in this lab. It is an offline mock of a PingOne pi.flow sign-in, with no tenant connection and no credentials, so it stays in Mock. For real PingOne shapes and live use, open pingone-LAB (owner-run, http://127.0.0.1:5500).';
+  api.get('/info', (_req, res) => res.json({ source: 'mock', realAvailable: false, realReason: REAL_UNAVAILABLE }));
+  api.post('/mode', (req, res) => {
+    const source = req.body?.source;
+    if (source !== 'mock' && source !== 'real') return bad(res, 'source must be exactly "mock" or "real"');
+    if (source === 'real') return res.status(409).json({ error: 'real_not_available', message: REAL_UNAVAILABLE });
+    res.json({ source: 'mock', realAvailable: false, realReason: REAL_UNAVAILABLE });
+  });
   api.use((_req, res) => res.status(404).json({ error: 'not_found' }));
   app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
   app.use('/api', api);
