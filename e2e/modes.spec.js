@@ -2,7 +2,7 @@ import { test, expect, noUnexpectedErrors } from './helpers.js';
 
 const TABS = ['signin', 'stepup', 'ciba', 'scenarios', 'diagram', 'raw', 'talk'];
 
-test('Mock | Live toggle, mode and banner are in the header on every tab; Live is refused and the page stays Mock', async ({ page, consoleErrors }) => {
+test('Mock | Live toggle, mode and banner are in the header on every tab; Real is disabled with a reason and the page stays Mock', async ({ page, consoleErrors }) => {
   for (const tab of TABS) {
     await page.goto(`/#/${tab}`);
     await expect(page.getByRole('group', { name: 'Mode' })).toBeVisible();
@@ -11,9 +11,9 @@ test('Mock | Live toggle, mode and banner are in the header on every tab; Live i
     await expect(page.getByTestId('banner')).toHaveAttribute('data-state', 'mock');
     await expect(page.getByTestId('banner')).toContainText('MOCK: offline, no tenant');
   }
-  await page.getByTestId('mode-live').click();
-  await expect(page.getByTestId('mode-note')).toContainText('Live mode is not available in this lab');
-  await expect(page.getByTestId('mode-note')).toContainText('pingone-LAB');
+  await expect(page.getByTestId('mode-live')).toBeDisabled(); // rule 19: Real is disabled with the server's reason, so it sends nothing
+  await expect(page.getByTestId('mode-live')).toHaveAttribute('title', /Real \(live\) is not available in this lab/);
+  await expect(page.getByTestId('mode-live')).toHaveAttribute('title', /pingone-LAB/);
   await expect(page.getByTestId('mode-mock')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('mode-live')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('banner')).toContainText('MOCK');
