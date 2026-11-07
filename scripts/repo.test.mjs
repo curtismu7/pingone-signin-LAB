@@ -23,7 +23,7 @@ test('every shipped text file mentions only reserved hosts', () => {
   const offenders = [];
   for (const f of trackedTextFiles()) {
     if (/^(server|core)\/test\//.test(f) || f === 'scripts/repo.test.mjs') continue; // tests name real-looking hosts on purpose, as negative cases
-    const hosts = scanHosts(read(f)).filter((h) => /^[a-z0-9.-]+$/.test(h) && h !== '0.0.0.0' && !/^(www\.)?(rfc-editor\.org|datatracker\.ietf\.org|json-schema\.org|openid\.net)$/.test(h) && !(h === 'github.com' && ['.github/workflows/ci.yml', 'README.md'].includes(f))); // CI downloads gitleaks from its release page; the README names the repo URL
+    const hosts = scanHosts(read(f)).filter((h) => /^[a-z0-9.-]+$/.test(h) && h !== '0.0.0.0' && !/^(www\.)?(rfc-editor\.org|datatracker\.ietf\.org|json-schema\.org|openid\.net)$/.test(h) && !(h === 'github.com' && ['.github/workflows/ci.yml', 'README.md'].includes(f)) && !(h === 'raw.githubusercontent.com' && f === 'scripts/check-ui-standard.sh')); // CI downloads gitleaks from its release page; the README names the repo URL; the UI guard downloads the canonical stylesheet from the meta repo
     if (hosts.length) offenders.push(`${f}: ${hosts.join(', ')}`);
   }
   assert.deepEqual(offenders, []);
