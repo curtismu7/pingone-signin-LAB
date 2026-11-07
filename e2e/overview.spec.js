@@ -66,11 +66,10 @@ test('light and dark theme toggle', async ({ page }) => {
   await page.goto('/#/signin');
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const light = await bg();
-  const btn = page.getByRole('button', { name: /^Theme:/ });
-  await btn.click(); // light
-  await expect(btn).toContainText('light');
-  await btn.click(); // dark
-  await expect(btn).toContainText('dark');
+  const picker = page.getByTestId('theme');
+  await picker.selectOption('light');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await picker.selectOption('dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await bg()).not.toBe(light);
   await shot(page, '08-signin-dark');
