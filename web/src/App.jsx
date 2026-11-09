@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getCatalog, getModeInfo, postMode, resetLab } from "./lib/api.js";
 import Banner from "./components/Banner.jsx";
 import Header from "./components/Header.jsx";
+// Opened from Customer Agent LAB (UC-LOGIN and UC-LEARN16 route here): strip below the banner + header Back only; nothing is preselected.
+import ReturnLink from "./return-link/ReturnLink.jsx";
 import SignInTab, { useLogin } from "./tabs/SignInTab.jsx";
 import StepUpTab, { useStepUp } from "./tabs/StepUpTab.jsx";
 import CibaTab, { useCiba } from "./tabs/CibaTab.jsx";
@@ -64,6 +66,7 @@ export default function App() {
     <>
       <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       <Banner />
+      <ReturnLink app="pingone-signin" />
       {header || <Header {...head} />}
       {body}
     </>
@@ -134,6 +137,7 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
     <>
       <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       <Banner />
+      <ReturnLink app="pingone-signin" />
       <Header {...head} catalog={catalog} onVertical={pickVertical} onReset={resetServer} />
       <p className="muted small note" role="status" data-testid="reset-note">{note}</p>
       <div className="tabbar" role="tablist" aria-label="Lab sections" onKeyDown={onTabKey}>

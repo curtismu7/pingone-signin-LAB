@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ShelfLink from "./ShelfLink.jsx";
+import ReturnLink from "../return-link/ReturnLink.jsx";
 import { pageTraceparent } from "../lib/traceparent.js";
 
 // Shown when the server refuses Real (409), or as the Real button's tooltip while it is unavailable. The server's /api/info
@@ -27,6 +28,7 @@ export default function Header({ catalog = null, onMock, onLive, modeInfo, prese
           {catalog && catalog.workspace !== "default" && <span className="mode" data-testid="workspace">workspace {catalog.workspace}</span>}
         </h1>
         <div className="tools-right">
+          <ReturnLink app="pingone-signin" variant="header" />
           <ShelfLink traceparent={pageTraceparent} />
           <div className="seg mode-toggle" role="group" aria-label="Mode">
             <button type="button" aria-pressed="true" onClick={() => { setNote(""); onMock(); }} data-testid="mode-mock">Mock</button>

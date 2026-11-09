@@ -118,8 +118,15 @@ test('reset.mjs refuses a non-loopback host before any request', async () => {
 test('login is pi.flow only in the web UI too: no navigation to an authorize URL, no other response_mode', () => {
   const files = trackedTextFiles().filter((x) => /^web\/src\/.*\.(js|jsx)$/.test(x) && !/\/test\//.test(x));
   assert.ok(files.length > 10);
+  // One exemption (owner, 2026-11-09): the vendored, hash-pinned Back button goes to a fixed Customer Agent LAB URL from
+  // returnTargets.js, never an authorize URL. Only that one exact call in that one file is skipped; everything else still applies.
+  const BACK = 'window.location.assign(link.href)';
   for (const f of files) {
-    const s = read(f);
+    let s = read(f);
+    if (f === 'web/src/return-link/ReturnLink.jsx') {
+      assert.equal(s.split(BACK).length, 2, `${f}: exactly one ${BACK}`);
+      s = s.replace(BACK, '');
+    }
     assert.doesNotMatch(s, /location\.(assign|replace)\(|location\.href\s*=|window\.open\(|<form[^>]*action=/, f);
     for (const m of s.matchAll(/response_mode[^\n]{0,40}/g)) assert.match(m[0], /pi\.flow/, `${f}: ${m[0]}`);
     assert.doesNotMatch(s, /dangerouslySetInnerHTML|innerHTML\s*=/, f);
