@@ -5,3 +5,4 @@ export { ACR, ACR_RANK, buildChallenge, parseChallenge, stepUpNeeded } from './s
 export { signJwt, verifyJwt, decodeJwt, pkceChallenge, newVerifier, newKey } from './jwt.js';
 export { USERS, CLIENTS, DEFAULTS, MOCK_PASSWORD, MOCK_OTP } from './seed.js';
 export { newTraceId, newSpanId, formatTraceparent, parseTraceparent, traceparentSource, replyTraceparent } from './traceparent.js';
+export { createMockRP, cborDecode, parseAuthData, coseToPublicKey, decodeClientData, fromB64u, FLAG } from './webauthn.js';

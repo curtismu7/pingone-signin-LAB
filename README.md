@@ -26,6 +26,7 @@ The banner above every tab says the same, also in presenter mode.
 4. `POST /mock/token` swaps code + verifier for HS256-signed `id_token` / `access_token` carrying `acr`, `amr`, `auth_time`, `sub`, `nonce`.
 5. Step-up (RFC 9470): the mock resource server answers `401 WWW-Authenticate: Bearer error="insufficient_user_authentication", acr_values=..., max_age=...`; re-authorizing with those values forces MFA and a fresh `auth_time`.
 6. CIBA: `POST /mock/bc-authorize`, poll `POST /mock/token`, and a mock phone that approves or denies.
+7. Passkey (WebAuthn): registration and sign-in against the lab's own **mock relying party** (`/mock/passkey/*`, not PingOne), with every server-side check shown. See "Passkey" below.
 
 Login is pi.flow **only**. An authorize request without `response_mode=pi.flow` is refused with an error and no flow or cookie; there is no redirect-based login path anywhere. In this lab the page plays the BFF (it holds the PKCE verifier and sends the cookie); a real application would keep those on a server.
 
@@ -34,10 +35,28 @@ Login is pi.flow **only**. An authorize request without `response_mode=pi.flow` 
 1. **Sign in**: open a pi.flow (optionally asking for a mock acr), then fill in the form the flow's status asks for, then Resume and Exchange. The trace shows every request and response; passwords are `********` and the session-token cookie is shown only as the server's shortened preview. The decoded id_token marks `acr`, `amr`, `auth_time` and `nonce`.
 2. **Step-up**: sign in with a low acr, call `POST /mock/rs/transfer`, read the parsed 401 challenge, re-authorize with the challenge's `acr_values` (and `max_age`), retry and get 200.
 3. **CIBA**: `login_hint`, a `binding_message` with a live counter against the mock's 8 character limit, an optional `requested_expiry`. The MOCK PHONE shows the notification with Approve and Deny. Polling shows `authorization_pending`, `slow_down`, `access_denied`, `expired_token` or the tokens.
-4. **Scenarios**: the server's 16 scenarios (`S01`-`S16`), Run and Run all, pass/fail, expected versus actual, trace, and a vertical picker in the header.
-5. **Diagram**: browser, BFF, mock PingOne, resource server and mock phone, as ReactFlow drawn from diagram-studio/1 data files (`server/data/diagrams/`, served at `/api/diagrams/:id`; see `docs/diagrams.md`). Pick the login, step-up or CIBA flow, Simulate, drag boxes, change the speed (0.5x to 4x), Reset (the boxes go back).
-6. **Raw**: every message as HTTP text.
-7. **Talk track**: `docs/talk-track.md`, generated from `server/data/talk-track.json` (`npm run talk-track`; a test fails on drift).
+4. **Passkey**: a WebAuthn ceremony, step by step. Registration: the options (challenge, `rp.id`, `user.id`, ES256, attestation `none`), the authenticator's `clientDataJSON` decoded, then the RP's parse of the authenticatorData (rpIdHash, the UP / UV / BE / BS / AT flags, signCount, AAGUID, credential id, the public key as a JWK) and its checks. Sign-in: a fresh challenge, the assertion (decoded `clientDataJSON`, DER signature, `userHandle`), and the checks: challenge (single use), origin, RP ID hash, UP, signature against the stored public key, signCount went up, userHandle. **Replay the same assertion** shows the refusal. A **Real** card says what PingOne's FIDO2 step needs (below).
+5. **Scenarios**: the server's 16 scenarios (`S01`-`S16`), Run and Run all, pass/fail, expected versus actual, trace, and a vertical picker in the header.
+6. **Diagram**: browser, BFF, mock PingOne, resource server and mock phone, as ReactFlow drawn from diagram-studio/1 data files (`server/data/diagrams/`, served at `/api/diagrams/:id`; see `docs/diagrams.md`). Pick the login, step-up or CIBA flow, Simulate, drag boxes, change the speed (0.5x to 4x), Reset (the boxes go back).
+7. **Raw**: every message as HTTP text.
+8. **Talk track**: `docs/talk-track.md`, generated from `server/data/talk-track.json` (`npm run talk-track`; a test fails on drift).
+
+### Passkey
+
+**Mock.** The relying party is this lab's own, in-process (`core/src/webauthn.js`), on the page's origin: the RP ID is the page's hostname and the expected origin is the page's origin, both fixed when the options are issued. It accepts ES256 (P-256) only and the attestation `none` policy (the attestation statement is not checked). Challenges are single use and expire after 120 s; passkeys live in memory and `POST /api/reset` forgets them. The authenticator is either:
+
+- **this browser** (`navigator.credentials`), when the page can use it: a secure context on a domain name, so open **http://localhost:6171/**. On http://127.0.0.1:6171/ the browser refuses, because an IP address is never a valid RP ID; the choice is shown disabled with that reason.
+- the **simulated authenticator**, labelled `SIMULATED` everywhere: a P-256 key pair made with WebCrypto in the page's memory (gone on reload), device-bound (BE and BS not set), always UP and UV. It is not a passkey.
+
+**Real (needs tenant setup).** This lab has no Real mode (the header's Live is refused), so PingOne's own passkey step is not run here; live PingOne use is `pingone-LAB`, owner-run. In a real pi.flow sign-in, PingOne's flow reaches a FIDO2 step that asks for an assertion and carries the WebAuthn request options; the page answers with the same `navigator.credentials.get` call shown in Mock and posts the assertion back to the flow. The status name and body shape of that step are UNVERIFIED in this lab. What the owner configures in the tenant first:
+
+1. **FIDO policy**: Relying Party ID = the domain the sign-in page is served on (see the trap below); attestation none; discoverable credentials (resident key) required for passkeys; user verification required or preferred; allow or refuse synced (backup eligible) passkeys.
+2. **MFA device authentication policy**: FIDO2 enabled as a method and linked to that FIDO policy; allow enrollment during sign-in if users have no passkey yet.
+3. **Authentication (sign-on) policy** on the application: an MFA step that uses that device authentication policy.
+4. **The application**: the same pi.flow setup as the password sign-in (`response_mode=pi.flow`, PKCE), and the page origin in its allowed CORS origins if the browser calls PingOne directly.
+5. **A test user** with a FIDO2 device enrolled (or enrolled on first sign-in through the policy above).
+
+**Trap: the RP ID must match the page's domain.** A passkey is bound to the rp.id it was made for. A passkey made for another domain (another app, a FIDO policy with a different Relying Party ID, another hostname) is refused by the browser and never offered, and an IP address is never a valid RP ID. If the FIDO policy's RP ID is not the sign-in page's domain or a parent of it, the FIDO2 step fails. The UI says the same on the Real card.
 
 **Presenter mode** (the Present button, or P; Esc leaves it; Ctrl, Cmd and Alt combinations are ignored, and so is typing in a field): large text, the Raw tab, the trace panes and the raw tokens are hidden, the simulation banner stays, and on the Diagram tab the Right and Left arrow keys (or Page Down and Page Up) step through the flow.
 
@@ -140,7 +159,7 @@ npm test        # core (node:test), server (node:test), web (vitest), repo check
 npm run e2e     # builds web, then Playwright (real chromium) against a real server
 ```
 
-On Node 26 a good `npm test` run is: 54 core, 75 server, 76 web (vitest, 10 files) and 39 repo-check tests, 0 failed. One repo check skips itself when the owner's local forbidden-strings list is absent (so hosted CI shows 1 skipped and a machine with the list shows 0). On a heavily loaded machine the web tests can time out; `WEB_ASYNC_TIMEOUT=20000 WEB_TEST_TIMEOUT=90000 npm test` raises the limits. `npm run e2e` needs Playwright's chromium (`npx playwright install chromium` once) and covers login, MFA, lockout, step-up, CIBA, scenarios, the diagram, light and dark, a 390 px viewport, presenter mode and its keys, the Mock | Live toggle, `traceparent` and a tour of every tab. Chrome logs every deliberate 4xx fetch as a console error, so tests that refuse on purpose ignore those lines.
+On Node 26 a good `npm test` run is: 71 core, 87 server, 94 web (vitest, 13 files) and 39 repo-check tests, 0 failed. One repo check skips itself when the owner's local forbidden-strings list is absent (so hosted CI shows 1 skipped and a machine with the list shows 0). On a heavily loaded machine the web tests can time out; `WEB_ASYNC_TIMEOUT=20000 WEB_TEST_TIMEOUT=90000 npm test` raises the limits. `npm run e2e` needs Playwright's chromium (`npx playwright install chromium` once) and covers login, MFA, lockout, step-up, CIBA, the passkey ceremony (this browser's `navigator.credentials` against Chrome's CDP virtual authenticator on localhost, and the simulated authenticator on 127.0.0.1), scenarios, the diagram, light and dark, a 390 px viewport, presenter mode and its keys, the Mock | Live toggle, `traceparent` and a tour of every tab. Chrome logs every deliberate 4xx fetch as a console error, so tests that refuse on purpose ignore those lines.
 
 ## Troubleshooting
 
@@ -148,6 +167,8 @@ On Node 26 a good `npm test` run is: 54 core, 75 server, 76 web (vitest, 10 file
 - **`/` is a 404**: run `npm run build` once; the API and the mock work without it.
 - **`npm start` refuses to start**: it prints the failed doctor check; run `npm run doctor` and fix that line (Node below 26 and a port outside 6100-6199 are the usual ones).
 - **Live is refused**: by design. This lab has no live mode.
+- **Passkey: "This browser" is disabled**: the page is on 127.0.0.1 (an IP is never an RP ID) or the browser has no WebAuthn. Open http://localhost:6171/, or use the simulated authenticator.
+- **Passkey: NotAllowedError**: the browser's passkey prompt was cancelled or timed out; press the button again.
 - **`npm ci` times out in Docker on OrbStack**: the Dockerfile already lets Node fall back to IPv4; retry the build.
 
 ## Ownership

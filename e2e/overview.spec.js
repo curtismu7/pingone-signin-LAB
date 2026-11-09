@@ -81,7 +81,7 @@ test('phone width 390px: no horizontal scroll on any tab', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#/signin');
   await page.getByRole('button', { name: /Open the flow/ }).click();
-  for (const hash of ['signin', 'stepup', 'ciba', 'scenarios', 'diagram', 'raw', 'talk']) {
+  for (const hash of ['signin', 'stepup', 'ciba', 'passkey', 'scenarios', 'diagram', 'raw', 'talk']) {
     await page.goto(`/#/${hash}`);
     await expect(page.getByRole('tab', { selected: true })).toBeVisible();
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -93,7 +93,7 @@ test('phone width 390px: no horizontal scroll on any tab', async ({ page }) => {
 
 test('tour of every tab: zero console errors and no page errors', async ({ page, consoleErrors }) => {
   await page.goto('/');
-  for (const name of ['Sign in', 'Step-up', 'CIBA', 'Scenarios', 'Diagram', 'Raw', 'Talk track']) {
+  for (const name of ['Sign in', 'Step-up', 'CIBA', 'Passkey', 'Scenarios', 'Diagram', 'Raw', 'Talk track']) {
     await page.getByRole('tab', { name: new RegExp(name) }).click();
     await expect(page.getByRole('tab', { name: new RegExp(name) })).toHaveAttribute('aria-selected', 'true');
   }

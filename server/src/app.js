@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
-import { createMockOP, parseTraceparent, USERS, CLIENTS, ACR, DEFAULTS, MOCK_PASSWORD, MOCK_OTP } from 'pingone-piflow-core';
+import { createMockOP, createMockRP, parseTraceparent, replyTraceparent, USERS, CLIENTS, ACR, DEFAULTS, MOCK_PASSWORD, MOCK_OTP } from 'pingone-piflow-core';
 import { makeHostCheck, makeSameOriginWrites, scanHosts, inert } from './safety.js';
 import { createHealth } from './health.js';
 import { SCENARIOS, VERTICALS, getScenario, getVertical, renderScenario, castNames, storyCorpus, vocabFor } from './stories.js';
@@ -25,7 +25,7 @@ const bad = (res, msg, status = 400) => res.status(status).json({ error: 'bad_re
 export function createApp({
   health = createHealth(), op: initialOp = createMockOP(), webDist = process.env.WEB_DIST || DEFAULT_WEB_DIST,
   workspace = resolveWorkspace(), dataRoot = process.env.SIGNIN_DATA_DIR || null, customerFile = undefined,
-  serveWeb = true,
+  serveWeb = true, rp = createMockRP({ users: USERS }),
 } = {}) {
   if (!validWorkspaceId(workspace)) throw new Error('bad workspace id'); // even when there is no data directory
   const op = initialOp; // POST /api/reset empties it (and mints a new key)
@@ -85,7 +85,7 @@ export function createApp({
       res.json({ vertical, total: results.length, passed: results.filter((r) => r.pass).length, results });
     } catch (e) { next(e); }
   });
-  api.post('/reset', (_req, res) => { op.reset(); sink.clear(); res.json({ reset: 'ok' }); });
+  api.post('/reset', (_req, res) => { op.reset(); rp.reset(); sink.clear(); res.json({ reset: 'ok' }); });
   api.get('/workspace', (_req, res) => res.json({ workspace }));
   api.get('/trace', (_req, res) => res.json({ workspace, entries: sink.list() }));
   api.get('/customer-config', (_req, res) => { const r = loadCustomerConfig({ file: customerFile, verticals: verticalIds }); res.json({ present: r.present, valid: r.errors.length === 0, errors: r.errors, config: r.config }); });
@@ -106,6 +106,27 @@ export function createApp({
   api.use((_req, res) => res.status(404).json({ error: 'not_found' }));
   app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
   app.use('/api', api);
+
+  // The lab's own mock WebAuthn RP (passkey ceremony, Passkey tab). The RP origin and RP ID come from the page's Origin, which
+  // the same-origin write check above has already matched to this request's Host (or to the lab-proxy's forwarded origin).
+  const passkey = express.Router();
+  passkey.use(express.json({ limit: '32kb' }));
+  const rpOrigin = (req) => req.headers.origin || `http://${req.headers.host}`;
+  const rpCall = (fn) => (req, res) => {
+    const tp = replyTraceparent(req.headers.traceparent);
+    if (tp) res.set('traceparent', tp);
+    let status = 200; let body;
+    try { body = fn(req); if (body && body.ok === false) status = 400; } catch (e) { status = 400; body = { error: 'invalid_request', message: inert(e.message, 200) }; }
+    sink.record({ source: 'passkey', method: req.method, path: `/passkey${req.path}`, status, traceparent: validTp(req.headers.traceparent), replyTraceparent: tp || null });
+    res.status(status).json(body);
+  };
+  passkey.post('/register/options', rpCall((req) => rp.registrationOptions({ username: req.body?.username, origin: rpOrigin(req) })));
+  passkey.post('/register/verify', rpCall((req) => rp.verifyRegistration(req.body)));
+  passkey.post('/login/options', rpCall((req) => rp.authenticationOptions({ username: req.body?.username || undefined, origin: rpOrigin(req) })));
+  passkey.post('/login/verify', rpCall((req) => rp.verifyAuthentication(req.body)));
+  passkey.get('/credentials', rpCall(() => ({ mock: true, credentials: rp.listCredentials() })));
+  passkey.use((_req, res) => res.status(404).json({ error: 'not_found' }));
+  app.use('/mock/passkey', passkey);
 
   const mock = express.Router();
   mock.use(express.json({ limit: '8kb', type: ['application/json', 'application/*+json'] }));

@@ -152,3 +152,9 @@ main:focus { outline: none; }
 .steps-list__item { border-left: 4px solid var(--border); padding: 2px 0 2px 12px; }
 .steps-list__item:focus-within, .steps-list__item:has(button:not([aria-disabled="true"])) { border-left-color: var(--accent); }
 .steps-list__head { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 6px; }
+
+/* Passkey tab: layout only (colours come from the shared tokens and the pill/badge classes above). */
+.seg--wrap { flex-wrap: wrap; }
+.checks { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
+.flags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

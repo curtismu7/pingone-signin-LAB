@@ -23,7 +23,7 @@ test('every shipped text file mentions only reserved hosts', () => {
   const offenders = [];
   for (const f of trackedTextFiles()) {
     if (/^(server|core)\/test\//.test(f) || f === 'scripts/repo.test.mjs') continue; // tests name real-looking hosts on purpose, as negative cases
-    const hosts = scanHosts(read(f)).filter((h) => /^[a-z0-9.-]+$/.test(h) && h !== '0.0.0.0' && !/^(www\.)?(rfc-editor\.org|datatracker\.ietf\.org|json-schema\.org|openid\.net)$/.test(h) && !(h === 'github.com' && ['.github/workflows/ci.yml', 'README.md'].includes(f)) && !(h === 'raw.githubusercontent.com' && f === 'scripts/check-ui-standard.sh')); // CI downloads gitleaks from its release page; the README names the repo URL; the UI guard downloads the canonical stylesheet from the meta repo
+    const hosts = scanHosts(read(f)).filter((h) => /^[a-z0-9.-]+$/.test(h) && h !== '0.0.0.0' && !/^(www\.)?(rfc-editor\.org|datatracker\.ietf\.org|json-schema\.org|openid\.net|w3\.org)$/.test(h) && !(h === 'github.com' && ['.github/workflows/ci.yml', 'README.md'].includes(f)) && !(h === 'raw.githubusercontent.com' && f === 'scripts/check-ui-standard.sh')); // CI downloads gitleaks from its release page; the README names the repo URL; the UI guard downloads the canonical stylesheet from the meta repo
     if (hosts.length) offenders.push(`${f}: ${hosts.join(', ')}`);
   }
   assert.deepEqual(offenders, []);
@@ -165,9 +165,9 @@ test('content pack validates and is in sync with the scenario data and the UI ta
   assert.equal(pack.demo.doctor, '/api/health');
   assert.equal(pack.demo.catalog, 'A11');
   assert.ok(pack.demo.tags.includes('catalog-A4') && pack.demo.tags.includes('catalog-A5'));
-  for (const c of pack.cards.filter((x) => x.group !== 'setup')) assert.match(c.action.href, /^\/#\/(signin|stepup|ciba|scenarios|diagram|talk)$/, c.id);
+  for (const c of pack.cards.filter((x) => x.group !== 'setup')) assert.match(c.action.href, /^\/#\/(signin|stepup|ciba|passkey|scenarios|diagram|talk)$/, c.id);
   const terms = pack.glossary.map((g) => g.id);
-  for (const t of ['pi-flow', 'redirect-login', 'flow-status', 'session-token-cookie', 'step-up', 'ciba', 'traceparent']) assert.ok(terms.includes(t), t);
+  for (const t of ['pi-flow', 'redirect-login', 'flow-status', 'session-token-cookie', 'step-up', 'ciba', 'traceparent', 'passkey', 'rp-id']) assert.ok(terms.includes(t), t);
   const text = JSON.stringify(pack);
   for (const must of ['mock:single', 'UNVERIFIED', '8 characters']) assert.ok(text.includes(must), must);
 });

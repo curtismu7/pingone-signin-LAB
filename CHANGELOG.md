@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased: passkey (WebAuthn) ceremony
+
+For Customer Agent LAB use case UC-LEARN16 (it hands off here).
+
+- New **Passkey** tab: registration and sign-in against the lab's own mock WebAuthn RP (`core/src/webauthn.js`, `/mock/passkey/*`), with the options, decoded `clientDataJSON`, authenticatorData flags (UP / UV / BE / BS / AT), signCount, attestation format and every server-side check, plus a refused replay. Uses the browser's `navigator.credentials` on http://localhost, or a labelled simulated authenticator (WebCrypto) elsewhere.
+- Real: a card that says PingOne's FIDO2 step through pi.flow needs tenant setup (FIDO policy, MFA device authentication policy, sign-on policy, application, test user), and the RP ID trap. No Real mode is added: the header's Live stays refused.
+- Tests: 17 core and 5 server tests for the verifier (wrong challenge, origin, RP ID hash, bad signature, replayed signCount, hostile CBOR and base64url), 7 web tests, 3 e2e tests (Chrome's CDP virtual authenticator on localhost, the simulated authenticator on 127.0.0.1, 375 px dark).
+- Learning Hub content pack: glossary `passkey`, `webauthn-checks`, `rp-id`, the WebAuthn Level 3 source and a `try-passkey` card. One talk-track step.
+
 ## Unreleased: sharper scope and the real pi.flow shapes
 
 This lab and `pingone-LAB` stay separate (owner decision): this one teaches how a PingOne-style sign-in behaves (failures, lockout, replay, MFA, step-up, CIBA with a mock phone), mock only; `pingone-LAB` holds the real PingOne shapes and live use.

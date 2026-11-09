@@ -27,7 +27,7 @@ export async function startFakeServer() {
     return r;
   };
   return {
-    state, clock, op,
+    state, clock, op, base, // base: the Origin every request carries (the page origin the server sees)
     advance: (ms) => { clock.t += ms; },
     reset: () => { op.reset(); state.jar = {}; state.calls = []; state.intercept = null; clock.t = Date.now(); },
     stop: async () => { globalThis.fetch = realFetch; health.stop(); await new Promise((r) => server.close(r)); },
