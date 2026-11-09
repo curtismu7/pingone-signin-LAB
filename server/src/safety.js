@@ -1,6 +1,6 @@
 // Safety rules. Pure functions plus three tiny middlewares. No I/O.
 //  1. Loopback bind only unless SIGNIN_BIND is set on purpose.
-//  2. Host header must be a loopback name (DNS-rebinding defence).
+//  2. Host header must be a loopback name, or a LAB_ALLOWED_HOSTS name on this lab's port (DNS-rebinding defence).
 //  3. A write must be same-origin: a cross-origin Origin, or a cross-site Sec-Fetch-Site, is refused.
 //  4. Every host that appears in any shipped text is reserved (.invalid / .example / apex of example.com|net|org).
 //  5. Ports are 6100-6199 only.
@@ -57,12 +57,36 @@ export function parseHostHeader(raw) {
   return m[1].toLowerCase();
 }
 
-export function makeHostCheck() {
+// Behind the family launcher (lab-proxy) the Host is this lab's own name plus its port, e.g. "<name>:6171". LAB_ALLOWED_HOSTS is a
+// comma list of those names (no ports). Loopback always works; unset means loopback only. Parsed once, at import, before any
+// server or timer starts.
+export function parseAllowedHosts(value) {
+  return new Set(String(value ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
+}
+export const LAB_ALLOWED_HOSTS = parseAllowedHosts(process.env.LAB_ALLOWED_HOSTS);
+const LAB_PORT = Number(process.env.PORT) || 6171;
+
+// True only for "<allowed name>:<this lab's port>".
+export function isLabProxyHost(hostHeader, allowed = LAB_ALLOWED_HOSTS, port = LAB_PORT) {
+  const m = /^([a-z0-9.-]+):(\d{1,5})$/i.exec(String(hostHeader ?? '').trim());
+  return Boolean(m) && allowed.has(m[1].toLowerCase()) && Number(m[2]) === port;
+}
+
+// A proxied write: Host is an allowed lab-proxy name (loopback does not count), and the browser's Origin equals the origin the
+// proxy reports in X-Forwarded-Proto/-Host. Forwarded headers are ignored on any other Host.
+export function isProxiedSameOrigin(headers, allowed = LAB_ALLOWED_HOSTS, port = LAB_PORT) {
+  if (!isLabProxyHost(headers.host, allowed, port)) return false;
+  const xfh = String(headers['x-forwarded-host'] || '').trim().toLowerCase();
+  const xfp = String(headers['x-forwarded-proto'] || '').trim().toLowerCase();
+  return xfh !== '' && (xfp === 'https' || xfp === 'http') && headers.origin === `${xfp}://${xfh}`;
+}
+
+export function makeHostCheck(allowed = LAB_ALLOWED_HOSTS, port = LAB_PORT) {
   return function hostCheck(req, res, next) {
     const host = parseHostHeader(req.headers.host);
     // Node keeps the first of several Host headers and drops the rest; RFC 9112 says to refuse such a request.
     const hostCount = Array.isArray(req.rawHeaders) ? req.rawHeaders.filter((x, i) => i % 2 === 0 && x.toLowerCase() === 'host').length : 1;
-    if (host === null || hostCount > 1 || !isLoopbackHost(host)) {
+    if (host === null || hostCount > 1 || (!isLoopbackHost(host) && !isLabProxyHost(req.headers.host, allowed, port))) {
       return res.status(403).json({ error: 'bad_host', message: 'Host must be a loopback name' });
     }
     next();
@@ -72,15 +96,15 @@ export const hostCheck = makeHostCheck();
 
 const WRITE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const DEFAULT_PORT = { 'http:': '80', 'https:': '443' };
-export function makeSameOriginWrites() {
+export function makeSameOriginWrites(allowed = LAB_ALLOWED_HOSTS, port = LAB_PORT) {
   return function sameOriginWrites(req, res, next) {
     if (!WRITE.has(req.method)) return next();
     const site = req.headers['sec-fetch-site'];
     if (site && site !== 'same-origin' && site !== 'none') return res.status(403).json({ error: 'cross_origin', message: 'writes must be same-origin' });
     const origin = req.headers.origin;
     if (origin) {
-      let ok = false;
-      try {
+      let ok = isProxiedSameOrigin(req.headers, allowed, port);
+      if (!ok) try {
         const o = new URL(origin);
         const hostHeader = String(req.headers.host || '').toLowerCase();
         // The Origin's host (default port dropped by URL) must be the Host this request arrived with; "host:443" on https is the same origin as "host".
