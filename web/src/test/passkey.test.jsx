@@ -56,7 +56,7 @@ describe("Passkey tab (Mock, simulated authenticator)", () => {
     expect(await screen.findByLabelText("sign-in options")).toHaveTextContent("rpId127.0.0.1");
     await click(user, "Sign with the passkey");
     expect(await screen.findByTestId("auth-clientdata")).toHaveTextContent("typewebauthn.get");
-    expect(screen.getByLabelText("assertion")).toHaveTextContent(/signature \(DER, base64url\)MEU|signature \(DER, base64url\)MEQ/);
+    expect(screen.getByLabelText("assertion")).toHaveTextContent(/signature \(DER, base64url\)ME[A-Za-z0-9_-]{80,}userHandle/); // a DER SEQUENCE (0x30 ..), 68 to 72 bytes
     await click(user, "Verify the assertion");
     await screen.findByTestId("auth-checks");
     expect(checks("auth-checks")).toEqual(expect.arrayContaining([["signature", "1"], ["signCount", "1"], ["challenge", "1"]]));
