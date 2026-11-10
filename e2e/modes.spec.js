@@ -1,6 +1,6 @@
 import { test, expect, noUnexpectedErrors } from './helpers.js';
 
-const TABS = ['signin', 'stepup', 'ciba', 'scenarios', 'diagram', 'raw', 'talk'];
+const TABS = ['signin', 'stepup', 'ciba', 'passkey', 'scenarios', 'diagram', 'raw', 'talk'];
 
 test('Mock | Live toggle, mode and banner are in the header on every tab; Real is disabled with a reason and the page stays Mock', async ({ page, consoleErrors }) => {
   for (const tab of TABS) {

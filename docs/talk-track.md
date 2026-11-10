@@ -15,5 +15,6 @@
 2. Wrong password once, then lockout with dana: the attempt counter and `ACCOUNT_LOCKED`.
 3. **Step-up**: low acr, the 401 challenge parsed on screen, re-authorize, retry 200. The acr names are mock.
 4. **CIBA**: type a binding message and watch the counter (8 is a mock limit). Approve on the mock phone and poll; then deny; press Poll now twice for `slow_down`.
-5. **Scenarios**: Run all, 16 of 16. **Diagram**: Simulate the three flows at 2x, drag a box, Reset.
-6. Light and dark, then Reset lab. Press P for presenter mode (Esc leaves it; the simulation banner stays).
+5. **Passkey**: open the lab on http://localhost:6171/ so the browser's own passkeys work (on 127.0.0.1 they cannot: an IP is never an RP ID, so the labelled simulated authenticator takes over). Register, then sign in: read the challenge, rp.id and user.id, the decoded clientDataJSON, the UP/UV/BE/BS flags and signCount, and every check the mock RP makes (challenge, origin, RP ID hash, signature against the stored public key). Press Replay: refused, the challenge is spent and signCount did not go up. Close on the Real card: PingOne's FIDO2 step needs a FIDO policy whose RP ID is the sign-in page's domain.
+6. **Scenarios**: Run all, 16 of 16. **Diagram**: Simulate the three flows at 2x, drag a box, Reset.
+7. Light and dark, then Reset lab. Press P for presenter mode (Esc leaves it; the simulation banner stays).

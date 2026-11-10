@@ -19,7 +19,7 @@ describe("shell", () => {
     await open();
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK: offline, no tenant/);
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
-    expect(screen.getAllByRole("tab").map((t) => t.textContent.replace(/^\d+\s*/, ""))).toEqual(["Sign in", "Step-up", "CIBA", "Scenarios", "Diagram", "Raw", "Talk track"]);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent.replace(/^\d+\s*/, ""))).toEqual(["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Raw", "Talk track"]);
     expect(screen.getByRole("tab", { name: /Sign in/ })).toHaveAttribute("aria-selected", "true");
   });
 
@@ -62,7 +62,7 @@ describe("shell", () => {
 
   it("there is no redirect login: no redirect button or link, and authorize is only ever sent with response_mode=pi.flow", async () => {
     const user = await open();
-    for (const tab of ["Sign in", "Step-up", "CIBA", "Scenarios", "Diagram", "Raw", "Talk track"]) {
+    for (const tab of ["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Raw", "Talk track"]) {
       await user.click(screen.getByRole("tab", { name: new RegExp(tab) }));
       expect(screen.queryByRole("button", { name: /redirect|hosted login/i })).toBeNull();
       expect(screen.queryByRole("link", { name: /redirect|hosted login/i })).toBeNull();

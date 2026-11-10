@@ -14,6 +14,7 @@ An offline lab (tier: Demo) that teaches how a PingOne-style **pi.flow** sign-in
 - **Label the mock.** Anything this lab invented (acr `mock:single` / `mock:multi`, status order (the MFA path), the cookie rotating per step, the lockout rule, the 8 character `binding_message` limit, the `authorizeResponse` resume body, the +5 s `slow_down`, `/phone/*`) must show as "mock" or UNVERIFIED in the UI and docs. Never present it as a PingOne fact.
 - The simulation banner (`MOCK: offline, no tenant`) is on every tab, also in presenter mode. The Mock | Live toggle and the mode are in the header on every page; Live is refused (no live mode exists).
 - All server and user text renders inert (React text nodes; `Inert`). No `innerHTML`.
+- Passkey tab: the mock WebAuthn RP is `core/src/webauthn.js` (`/mock/passkey/*`), ES256 only. Keys come from WebCrypto (page) or `createECDH` + `createPrivateKey` (tests). Real (PingOne FIDO2 via pi.flow) is not run here: it needs tenant setup (README). The RP ID trap (page domain, never an IP) is stated in the UI and README.
 - Test scripts use globs: `node --test test/*.test.js`, never a directory. No EC `generateKeyPair` or `generateKeyPairSync` anywhere (tokens are HS256 with a throwaway key).
 - Ports 6100-6199 only (server 6171, Vite 6173, e2e picks a free one). Loopback bind, Host check, same-origin writes, netguard (fetch, sockets, dns, udp send and connect, with a self-test); Docker publishes `127.0.0.1:` only (a test pins it).
 - Settings: the one shared `~/Development/.env` (`STANDALONE_ENV` overrides), `server/src/settings.js`, this lab's three keys only. No per-app `.env` loader.
@@ -21,7 +22,7 @@ An offline lab (tier: Demo) that teaches how a PingOne-style **pi.flow** sign-in
 - Stories are data (`server/data/*.json`) with `{{cast.<role>}}` and `{{vocab.<key>}}` tokens and three verticals; a test fails on an undefined token. The talk track is data too (`server/data/talk-track.json`); `docs/talk-track.md` is generated (`npm run talk-track`) and a test fails on drift.
 - Workspace id (`SIGNIN_WORKSPACE`, default `default`, `[a-z0-9-]{1,32}`) keys the mock state, data dir and trace sink. `customer.config.json` (validated, no purple) re-skins via CSS tokens. Every hop carries a W3C `traceparent`.
 - UI: the shared `web/src/styles/standalone-ui.css` is vendored byte for byte (never edit it); `web/src/app.css` uses tokens only. Action buttons use `aria-disabled` (the `Btn` component), not `disabled`. P toggles presenter mode, Esc leaves it (modifier keys ignored).
-- Commits end with the `Co-Authored-By` trailer line the session gives. Never push or add a remote without the owner.
+- No AI attribution anywhere (no `Co-Authored-By` trailer, no "Generated with" line). Never push or add a remote without the owner.
 
 ## Diagrams (rule 17)
 The three flow diagrams are `diagram-studio/1` data in `server/data/diagrams/` (nodes, edges, groups, steps; positions = Reset positions). Do not hand-build nodes or edges in `DiagramTab.jsx`: edit the JSON. `server/src/vendor/diagram-validate.js` is vendored from the studio: never edit it (a test pins its hash; re-vendor per `docs/diagrams.md`). A dashed edge means one-way. Live highlighting and Simulate stay app code. Gap list for the studio: `docs/diagrams.md`.

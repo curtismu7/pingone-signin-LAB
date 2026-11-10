@@ -15,6 +15,9 @@
       "rfc-9470",
       "ciba",
       "mfa",
+      "passkey",
+      "webauthn",
+      "fido2",
       "mock",
       "catalog-A4",
       "catalog-A5"
@@ -103,6 +106,31 @@
       ]
     },
     {
+      "id": "passkey",
+      "term": "Passkey (WebAuthn / FIDO2)",
+      "definition": "A key pair made by an authenticator (a phone, a laptop, a security key) for one relying party (RP). The private key never leaves the authenticator; the RP stores the public key. Registration (navigator.credentials.create) sends the public key inside an attestationObject; sign-in (navigator.credentials.get) sends a signature over the authenticatorData and a hash of clientDataJSON. In this lab the RP is a mock on the page's own origin, and where the browser cannot make a real passkey a clearly labelled simulated authenticator in the page stands in.",
+      "aliases": [
+        "WebAuthn",
+        "FIDO2",
+        "passkey ceremony"
+      ]
+    },
+    {
+      "id": "webauthn-checks",
+      "term": "What a WebAuthn RP checks",
+      "definition": "clientDataJSON.type (webauthn.create or webauthn.get), the challenge (one the RP issued, single use, not expired), the origin (the RP origin), authenticatorData.rpIdHash = SHA-256(RP ID), the User Present flag (UP; User Verified, UV, when required), at registration the public key algorithm, and at sign-in the signature against the stored public key and a signCount that went up (if either side counts). The flags BE and BS say whether the passkey may be, and is, synced. Attestation is not checked here (the mock RP asks for attestation none).",
+      "aliases": [
+        "signCount",
+        "rpIdHash",
+        "UP UV BE BS"
+      ]
+    },
+    {
+      "id": "rp-id",
+      "term": "RP ID (rp.id)",
+      "definition": "The domain a passkey is bound to. It must be the page's domain or a parent of it; an IP address is never valid, so the lab's browser passkeys run on http://localhost and not on 127.0.0.1. A passkey made for another RP ID is never offered by the browser. For a real PingOne passkey sign-in the FIDO policy's Relying Party ID must match the sign-in page's domain."
+    },
+    {
       "id": "mock-phone",
       "term": "Mock phone",
       "definition": "A stand-in in the UI for the user's device in CIBA: it shows the notification and has Approve and Deny buttons that call the mock's /phone endpoints. It is not a PingOne feature."
@@ -135,6 +163,15 @@
       "use": "bc-authorize, polling errors (authorization_pending, slow_down, access_denied, expired_token), binding_message",
       "status": "not-read",
       "checked": "2026-10-21"
+    },
+    {
+      "id": "webauthn-l3",
+      "title": "Web Authentication: An API for accessing Public Key Credentials, Level 3 (W3C)",
+      "url": "https://www.w3.org/TR/webauthn-3/",
+      "kind": "standard",
+      "use": "the registration and authentication verification steps the mock RP shows (7.1 and 7.2), flags, signCount",
+      "status": "not-read",
+      "checked": "2026-11-09"
     }
   ],
   "cards": [
@@ -184,6 +221,21 @@
         "mock-phone"
       ],
       "story": "S11"
+    },
+    {
+      "id": "try-passkey",
+      "label": "Register and sign in with a passkey",
+      "description": "A WebAuthn ceremony against the lab's own mock RP: options, clientDataJSON, flags, signCount and every server check, then a refused replay. PingOne's FIDO2 step (Real) needs tenant setup.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#/passkey"
+      },
+      "terms": [
+        "passkey",
+        "webauthn-checks",
+        "rp-id"
+      ]
     },
     {
       "id": "try-scenarios",

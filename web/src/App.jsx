@@ -7,6 +7,7 @@ import ReturnLink from "./return-link/ReturnLink.jsx";
 import SignInTab, { useLogin } from "./tabs/SignInTab.jsx";
 import StepUpTab, { useStepUp } from "./tabs/StepUpTab.jsx";
 import CibaTab, { useCiba } from "./tabs/CibaTab.jsx";
+import PasskeyTab, { usePasskey } from "./tabs/PasskeyTab.jsx";
 import ScenariosTab, { useScenarios } from "./tabs/ScenariosTab.jsx";
 import DiagramTab from "./tabs/DiagramTab.jsx";
 import { loadFlows } from "./lib/diagram.js";
@@ -14,7 +15,7 @@ import RawTab from "./tabs/RawTab.jsx";
 import TalkTrackTab from "./tabs/TalkTrackTab.jsx";
 import { brandCss } from "./lib/brand.js";
 
-export const TABS = [["signin", "Sign in"], ["stepup", "Step-up"], ["ciba", "CIBA"], ["scenarios", "Scenarios"], ["diagram", "Diagram"], ["raw", "Raw"], ["talk", "Talk track"]];
+export const TABS = [["signin", "Sign in"], ["stepup", "Step-up"], ["ciba", "CIBA"], ["passkey", "Passkey"], ["scenarios", "Scenarios"], ["diagram", "Diagram"], ["raw", "Raw"], ["talk", "Talk track"]];
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, v); } catch { /* not remembered */ } };
 const tabFromHash = () => { const id = window.location.hash.replace(/^#\/?/, "").split("?")[0]; return TABS.some(([t]) => t === id) ? id : "signin"; };
@@ -80,6 +81,7 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
   const login = useLogin(catalog);
   const stepup = useStepUp(catalog);
   const ciba = useCiba(catalog);
+  const passkey = usePasskey(catalog);
   const scenarios = useScenarios(catalog);
   const [cursor, setCursor] = useState(-1);
   const [boxes, setBoxes] = useState(flows.login.boxes);
@@ -111,7 +113,7 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
     return () => window.removeEventListener("keydown", on);
   }, [present, tab, stepBy]);
 
-  const clearAll = useCallback(() => { login.reset(); stepup.reset(); ciba.reset(); scenarios.clear(); setCursor(-1); setBoxes(flows.login.boxes); }, [login, stepup, ciba, scenarios, flows]);
+  const clearAll = useCallback(() => { login.reset(); stepup.reset(); ciba.reset(); passkey.reset(); scenarios.clear(); setCursor(-1); setBoxes(flows.login.boxes); }, [login, stepup, ciba, passkey, scenarios, flows]);
   const pickVertical = useCallback(async (id) => { const next = await getCatalog(id); setCatalog(next); clearAll(); }, [setCatalog, clearAll]);
   const resetServer = useCallback(async () => {
     try { await resetLab(); clearAll(); setNote("Lab reset: every flow, code, CIBA request and lockout is gone, and the token key is new."); }
@@ -129,9 +131,9 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
     go(id); tabRefs.current[id]?.focus();
   };
 
-  const app = { catalog, login, stepup, ciba, scenarios, cursor, setCursor, boxes, setBoxes, flows, flowId, setFlowId, theme, present, stepBy };
+  const app = { catalog, login, stepup, ciba, passkey, scenarios, cursor, setCursor, boxes, setBoxes, flows, flowId, setFlowId, theme, present, stepBy };
   const shownTab = present && tab === "raw" ? "signin" : tab; // the Raw tab is hidden in presenter mode
-  const Panel = { signin: SignInTab, stepup: StepUpTab, ciba: CibaTab, scenarios: ScenariosTab, diagram: DiagramTab, raw: RawTab, talk: TalkTrackTab }[shownTab] || SignInTab;
+  const Panel = { signin: SignInTab, stepup: StepUpTab, ciba: CibaTab, passkey: PasskeyTab, scenarios: ScenariosTab, diagram: DiagramTab, raw: RawTab, talk: TalkTrackTab }[shownTab] || SignInTab;
 
   return (
     <>

@@ -95,7 +95,7 @@ describe("presenter mode (rules 2 and 3)", () => {
   it("the banner is there on every tab, in presenter mode too", async () => {
     const user = await open("#/signin");
     await user.click(screen.getByRole("button", { name: "Present" }));
-    for (const tab of ["Sign in", "Step-up", "CIBA", "Scenarios", "Diagram", "Talk track"]) {
+    for (const tab of ["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Talk track"]) {
       await user.click(screen.getByRole("tab", { name: new RegExp(tab) }));
       expect(screen.getByTestId("banner")).toBeVisible();
       expect(screen.getByTestId("banner")).toHaveTextContent(/fictional/);
