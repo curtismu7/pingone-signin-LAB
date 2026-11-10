@@ -35,6 +35,7 @@ describe("Passkey tab (Mock, simulated authenticator)", () => {
     expect(regOpts).toHaveTextContent(/user\.id[A-Za-z0-9_-]{22}/);
     expect(regOpts).toHaveTextContent(/challenge[A-Za-z0-9_-]{43}/);
     expect(regOpts).toHaveTextContent(`expected origin${origin.value}`);
+    expect(screen.getByTestId("ip-rpid")).toHaveTextContent(/IP address: a real browser refuses it/);
 
     await click(user, "Create the passkey");
     const cd = await screen.findByTestId("reg-clientdata");
@@ -52,7 +53,7 @@ describe("Passkey tab (Mock, simulated authenticator)", () => {
     expect(within(screen.getByTestId("reg-checks")).getByRole("status")).toHaveTextContent("Verified: mark");
 
     await click(user, "Get sign-in options");
-    expect(screen.getByLabelText("sign-in options")).toHaveTextContent("rpId127.0.0.1");
+    expect(await screen.findByLabelText("sign-in options")).toHaveTextContent("rpId127.0.0.1");
     await click(user, "Sign with the passkey");
     expect(await screen.findByTestId("auth-clientdata")).toHaveTextContent("typewebauthn.get");
     expect(screen.getByLabelText("assertion")).toHaveTextContent(/signature \(DER, base64url\)MEU|signature \(DER, base64url\)MEQ/);
@@ -86,6 +87,8 @@ describe("Passkey tab (Mock, simulated authenticator)", () => {
     const real = screen.getByTestId("passkey-real");
     expect(real).toHaveTextContent("needs tenant setup");
     expect(real).toHaveTextContent(/not run here/);
+    expect(within(real).getByRole("heading", { name: /What the owner configures/ })).toHaveTextContent("UNVERIFIED");
+    expect(real).toHaveTextContent(/MFA enabled/);
     for (const must of ["FIDO policy", "device authentication policy", "Authentication (sign-on) policy", "pi.flow"]) expect(real).toHaveTextContent(must);
     expect(screen.getByTestId("rpid-trap")).toHaveTextContent(/RP ID must match the page's domain/);
     expect(screen.getByTestId("rpid-trap")).toHaveTextContent(/IP address is never a valid RP ID/);

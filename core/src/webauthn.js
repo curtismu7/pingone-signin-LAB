@@ -202,6 +202,7 @@ export function createMockRP({ now = Date.now, ttlMs = 120_000, users = {}, rpNa
     } catch (e) { return { ...fail(steps, 'attestationObject and authenticatorData decode', e), clientData: cd.json }; }
     steps.push(rpIdStep(auth, c), upStep(auth), uvStep(auth));
     const credId = auth.attested ? b64u(auth.attested.credentialId) : null;
+    steps.push({ id: 'BE/BS', label: 'flags are consistent: Backed up (BS) only with Backup Eligible (BE)', ok: !(auth.flags.BS && !auth.flags.BE), detail: `BE ${auth.flags.BE ? 1 : 0}, BS ${auth.flags.BS ? 1 : 0}` });
     steps.push({ id: 'AT', label: 'attested credential data present, and its id is the credential id sent', ok: !!credId && credId === cred.id && (cred.rawId === undefined || cred.rawId === cred.id), detail: `authData id ${credId}, sent id ${JSON.stringify(cred.id)}` });
     let pub = null; let algDetail = 'no attested credential data';
     if (auth.attested) { try { pub = coseToPublicKey(auth.attested.coseKey); algDetail = 'EC2 key on P-256'; } catch (e) { algDetail = e.message; } }
@@ -228,9 +229,11 @@ export function createMockRP({ now = Date.now, ttlMs = 120_000, users = {}, rpNa
       auth = parseAuthData(authRaw);
     } catch (e) { return fail(steps, 'the credential, clientDataJSON and authenticatorData decode', e); }
     const stored = typeof cred.id === 'string' ? st.credentials.get(cred.id) : undefined;
-    steps.push({ id: 'credential', label: 'credential id is registered with this RP', ok: !!stored, detail: stored ? `belongs to ${stored.username}` : `unknown id ${JSON.stringify(String(cred.id).slice(0, 80))}` });
+    const shownId = typeof cred.id === 'string' ? JSON.stringify(cred.id.slice(0, 80)) : '(not a string)';
+    steps.push({ id: 'credential', label: 'credential id is registered with this RP (and rawId is the same id)', ok: !!stored && (cred.rawId === undefined || cred.rawId === cred.id), detail: stored ? `belongs to ${stored.username}` : `unknown id ${shownId}` });
     const { steps: s1, c } = clientDataSteps(cd, 'webauthn.get', 'get');
     steps.push(...s1);
+    if (c && stored) steps.push({ id: 'rpId', label: 'the passkey was registered for this RP ID', ok: stored.rpId === c.rpId, detail: `registered for ${stored.rpId}, ceremony RP ID ${c.rpId}` });
     steps.push(rpIdStep(auth, c), upStep(auth), uvStep(auth));
     if (c && c.username && stored) steps.push({ id: 'allowed', label: 'credential belongs to the user the challenge was issued for', ok: stored.username === c.username, detail: `challenge for ${c.username}, credential of ${stored.username}` });
     let sigOk = false; let sigDetail = 'no stored public key to check against';
@@ -246,7 +249,9 @@ export function createMockRP({ now = Date.now, ttlMs = 120_000, users = {}, rpNa
     const before = stored ? stored.signCount : null;
     const countOk = !!stored && ((auth.signCount === 0 && before === 0) || auth.signCount > before);
     steps.push({ id: 'signCount', label: 'signCount went up (or both are 0)', ok: countOk, detail: stored ? `stored ${before}, received ${auth.signCount}${countOk ? '' : ': possible cloned authenticator or replay'}` : 'no stored credential' });
-    if (cred.response.userHandle != null && stored) steps.push({ id: 'userHandle', label: 'userHandle is the user.id registered with the credential', ok: cred.response.userHandle === stored.userId, detail: `expected ${stored.userId}, got ${JSON.stringify(String(cred.response.userHandle).slice(0, 80))}` });
+    // WebAuthn L3 7.2: when the user was not named before the ceremony (a discoverable passkey), the userHandle is required.
+    if (c && !c.username && cred.response.userHandle == null) steps.push({ id: 'userHandle', label: 'userHandle is present (required when the user was not named first)', ok: false, detail: 'missing' });
+    else if (cred.response.userHandle != null && stored) steps.push({ id: 'userHandle', label: 'userHandle is the user.id registered with the credential', ok: cred.response.userHandle === stored.userId, detail: `expected ${stored.userId}, got ${typeof cred.response.userHandle === 'string' ? JSON.stringify(cred.response.userHandle.slice(0, 80)) : '(not a string)'}` });
     const ok = steps.every((x) => x.ok);
     if (ok) { stored.signCount = auth.signCount; stored.bs = auth.flags.BS; }
     return { ok, steps, clientData: cd.json, authData: showAuthData(auth), signCountBefore: before, user: ok ? stored.username : null };

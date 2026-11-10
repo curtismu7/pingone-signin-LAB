@@ -38,7 +38,7 @@ test('happy path: register, then sign in; every check passes and signCount is st
   assert.equal(r.ok, true, JSON.stringify(failed(r)));
   assert.equal(r.user, 'mark');
   assert.equal(r.fmt, 'none');
-  assert.deepEqual(['type', 'challenge', 'origin', 'crossOrigin', 'rpIdHash', 'UP', 'UV', 'AT', 'alg', 'attestation', 'new'], r.steps.map((s) => s.id));
+  assert.deepEqual(['type', 'challenge', 'origin', 'crossOrigin', 'rpIdHash', 'UP', 'UV', 'BE/BS', 'AT', 'alg', 'attestation', 'new'], r.steps.map((s) => s.id));
   assert.equal(r.authData.flags.AT, true);
   assert.equal(r.authData.publicKeyJwk.crv, 'P-256');
   const a = login();
@@ -228,4 +228,46 @@ test('reset forgets every challenge and credential', () => {
   rp.reset();
   assert.equal(rp.listCredentials().length, 0);
   assert.equal(rp._state().challenges.size, 0);
+});
+
+test('hostile (review): a passkey registered for one RP ID is refused in a ceremony for another, even with a matching hash', () => {
+  const { rp, authr, register } = setup();
+  assert.equal(register().ok, true); // RP ID localhost
+  const opts = rp.authenticationOptions({ origin: 'http://127.0.0.1:6171' });
+  const a = rp.verifyAuthentication(authr.get(opts.publicKey, 'http://127.0.0.1:6171'));
+  assert.deepEqual(failed(a), ['rpId']);
+});
+
+test('hostile (review): discoverable sign-in without userHandle, rawId that differs from id, BS without BE', () => {
+  const { rp, authr, register } = setup();
+  assert.equal(register().ok, true);
+  const opts = rp.authenticationOptions({ origin: ORIGIN }); // no username: discoverable
+  const r = rp.verifyAuthentication(authr.get(opts.publicKey, ORIGIN, { userHandle: null }));
+  assert.deepEqual(failed(r), ['userHandle']);
+  const o2 = rp.authenticationOptions({ username: 'mark', origin: ORIGIN });
+  const c2 = authr.get(o2.publicKey, ORIGIN);
+  assert.deepEqual(failed(rp.verifyAuthentication({ ...c2, rawId: 'AAAA' })), ['credential']);
+  const discoverable = rp.authenticationOptions({ origin: ORIGIN });
+  assert.equal(rp.verifyAuthentication(authr.get(discoverable.publicKey, ORIGIN)).ok, true, 'with userHandle a discoverable sign-in works');
+  assert.deepEqual(failed(register({ flags: 0x55 })), ['BE/BS']);
+  assert.equal(register({ flags: 0x5d }).ok, true, 'BE and BS together are fine (a synced passkey)');
+});
+
+test('hostile (review): a non-string id or userHandle does not throw; oversize base64url and trailing CBOR bytes are named', () => {
+  const { rp, authr, register } = setup();
+  assert.equal(register().ok, true);
+  const opts = rp.authenticationOptions({ username: 'mark', origin: ORIGIN });
+  const c = authr.get(opts.publicKey, ORIGIN);
+  const r = rp.verifyAuthentication({ ...c, id: { toString: 1 }, response: { ...c.response, userHandle: { toString: 1 } } });
+  assert.equal(r.ok, false);
+  assert.match(step(r, 'credential').detail, /not a string/);
+  const big = rp.verifyAuthentication({ type: 'public-key', response: { clientDataJSON: 'A'.repeat(16_385) } });
+  assert.match(step(big, 'decode').detail, /too long/);
+  const ok16k = rp.verifyAuthentication({ type: 'public-key', response: { clientDataJSON: 'A'.repeat(16_384) } });
+  assert.doesNotMatch(step(ok16k, 'decode').detail, /too long/);
+  const o2 = rp.registrationOptions({ username: 'mark', origin: ORIGIN });
+  const g = authr.create(o2.publicKey, ORIGIN);
+  const att = Buffer.concat([Buffer.from(g.response.attestationObject, 'base64url'), Buffer.from([0])]);
+  const t = rp.verifyRegistration({ ...g, response: { ...g.response, attestationObject: att.toString('base64url') } });
+  assert.match(step(t, 'decode').detail, /trailing bytes/);
 });

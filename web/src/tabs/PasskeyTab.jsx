@@ -111,14 +111,15 @@ export function RealPasskeyCard() {
   return (
     <section className="card" aria-label="Real: PingOne passkey" data-testid="passkey-real">
       <h3>Real: PingOne passkey (FIDO2) through pi.flow <Pill tone="hold">needs tenant setup</Pill></h3>
-      <p>This lab has no Real mode (the header's Live is refused), so the PingOne FIDO2 step is <strong>not run here</strong>. With a tenant, the pi.flow sign-in reaches a FIDO2 step: the flow asks for an assertion and carries the WebAuthn request options, the page calls <code>navigator.credentials.get</code> (the same browser call as above) and posts the assertion back to the flow. The status name and body shape of that step are <Unverified /> in this lab. For live PingOne use, see pingone-LAB (owner-run).</p>
-      <h4>What the owner configures in the tenant first</h4>
+      <p>This lab has no Real mode (the header's Live is refused), so the PingOne FIDO2 step is <strong>not run here</strong>. With a tenant, the pi.flow sign-in reaches a FIDO2 step: the flow asks for an assertion and carries the WebAuthn request options, the page calls <code>navigator.credentials.get</code> (the same browser call as above) and posts the assertion back to the flow. The status name and body shape of that step are <Unverified /> in this lab (pingone-LAB, the owner-run live lab, names it <code>ASSERTION_REQUIRED</code> and also stops there: it has no passkey path either).</p>
+      <h4>What the owner configures in the tenant first <Unverified /></h4>
+      <p className="small muted">From the lab author's reading of PingOne's model, not checked against a tenant or a PingOne doc; console names may differ.</p>
       <ol className="small">
         <li><strong>FIDO policy</strong>: Relying Party ID = the domain the sign-in page is served on (see the trap below); attestation none; discoverable credentials (resident key) required for passkeys; user verification required or preferred; allow or refuse synced (backup eligible) passkeys.</li>
         <li><strong>MFA device authentication policy</strong>: FIDO2 enabled as a method and linked to that FIDO policy; allow enrollment during sign-in if users have no passkey yet.</li>
         <li><strong>Authentication (sign-on) policy</strong> on the application: an MFA step that uses that device authentication policy.</li>
         <li><strong>The application</strong>: the same pi.flow setup the password sign-in needs (response_mode pi.flow, PKCE), and the page origin in its allowed CORS origins if the browser calls PingOne directly.</li>
-        <li><strong>A test user</strong> with a FIDO2 device enrolled (or enrolled on first sign-in through the policy above).</li>
+        <li><strong>A test user</strong> with MFA enabled and a FIDO2 device enrolled (or enrolled on first sign-in through the policy above), in an environment that has the MFA service.</li>
       </ol>
       <p className="alert" role="note" data-testid="rpid-trap"><strong>Trap: the RP ID must match the page's domain.</strong> A passkey is bound to the rp.id it was made for. A passkey made for another domain (another app, another tenant's FIDO policy, a different hostname) is refused by the browser and never offered; an IP address is never a valid RP ID. If the FIDO policy's RP ID is not the sign-in page's domain or a parent of it, the FIDO2 step fails.</p>
     </section>
@@ -151,6 +152,7 @@ export default function PasskeyTab({ app }) {
         <ol className="steps">
           <Step n="1" title="Registration: get the options" state={s.regOpts ? "done" : "now"}>
             <Btn className="primary" disabled={s.busy} onClick={p.regOptions}>Get registration options</Btn>
+            {s.regOpts && /^(\d{1,3}(\.\d{1,3}){3}|\[.*\])$/.test(s.regOpts.publicKey.rp.id) && <p className="small" data-testid="ip-rpid"><Mock>simulated only</Mock> This rp.id is an IP address: a real browser refuses it. Only the simulated authenticator can use it; open http://localhost:6171/ for a real passkey.</p>}
             {s.regOpts && <Kv label="registration options" rows={[["challenge", s.regOpts.publicKey.challenge], ["rp.id", s.regOpts.publicKey.rp.id], ["user.id", s.regOpts.publicKey.user.id], ["user.name", s.regOpts.publicKey.user.name], ["pubKeyCredParams", s.regOpts.publicKey.pubKeyCredParams], ["authenticatorSelection", s.regOpts.publicKey.authenticatorSelection], ["attestation", s.regOpts.publicKey.attestation], ["expected origin", s.regOpts.expectedOrigin]]} />}
           </Step>
           <Step n="2" title="Registration: the authenticator creates the passkey" state={s.regCred ? "done" : s.regOpts ? "now" : "wait"}>
