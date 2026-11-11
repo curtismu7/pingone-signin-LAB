@@ -17,6 +17,16 @@ beforeEach(() => { fake.reset(); try { localStorage.clear(); } catch { /* none *
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 
 describe("return link", () => {
+  it("?from=ai-demo-standalone: strip named for AI Demo Standalone, Back to its fixed proxy path", async () => {
+    window.history.replaceState(null, "", "/pingone-signin-lab/?from=ai-demo-standalone&uc=UC12#/signin");
+    render(<App />);
+    await screen.findByRole("tablist");
+    const note = screen.getByRole("note", { name: "Opened from AI Demo Standalone" });
+    expect(note.textContent).toContain("UC12");
+    expect(screen.getAllByRole("button", { name: /Back to AI Demo Standalone/ })).toHaveLength(2);
+    expect(returnLinkFor("pingone-signin").href).toBe("/ai-demo-standalone/?returned=pingone-signin&uc=UC12");
+  });
+
   it("the vendored files match return-link.sha256, which names the parent commit", () => {
     const dir = path.join(process.cwd(), "src", "return-link");
     const text = fs.readFileSync(path.join(dir, "return-link.sha256"), "utf8");

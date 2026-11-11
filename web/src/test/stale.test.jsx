@@ -65,7 +65,7 @@ describe("late answers after Start over or Reset are dropped", () => {
     const h = holdWith(fake, (p) => p === "/mock/token");
     await user.click(exchange);
     await waitFor(() => expect(h.wasHeld()).toBe(true));
-    await user.click(screen.getByRole("button", { name: "Reset lab" }));
+    await user.click(screen.getByTestId("reset"));
     await waitFor(() => expect(screen.getByTestId("reset-note")).toHaveTextContent(/Lab reset/));
     h.release();
     await new Promise((r) => setTimeout(r, 300));

@@ -61,7 +61,7 @@ export default function App() {
   }, [present, setPresentMode]);
 
   const setThemePersist = (v) => { setTheme(v); };
-  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist };
+  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist, talkActive: tab === "talk", onTalk: () => { if (tab !== "talk") window.location.hash = "#/talk"; } };
 
   const shell = (body, header) => (
     <>

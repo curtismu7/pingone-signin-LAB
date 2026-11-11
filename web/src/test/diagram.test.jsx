@@ -30,7 +30,7 @@ describe("diagram", () => {
     await open("#/diagram");
     expect(screen.getByRole("group", { name: /Sequence diagram/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Simulate" })).not.toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
+    expect(screen.getByTestId("diagram-reset")).toBeInTheDocument();
     expect(screen.getByLabelText("Speed")).toHaveValue("1");
     expect([...screen.getByLabelText("Speed").options].map((o) => o.textContent)).toEqual(["0.5x", "1x", "2x", "4x"]);
     expect([...screen.getByLabelText("Flow").options].map((o) => o.value)).toEqual(["login", "stepup", "ciba"]);
@@ -54,7 +54,7 @@ describe("diagram", () => {
     for (let i = 0; i < n; i++) await act(async () => { await vi.advanceTimersByTimeAsync(1700); });
     expect(caption()).toMatch(new RegExp(`Step ${n} of ${n}`));
     expect(screen.getByRole("button", { name: "Simulate" })).not.toHaveAttribute("aria-disabled", "true");
-    act(() => { screen.getByRole("button", { name: "Reset" }).click(); });
+    act(() => { screen.getByTestId("diagram-reset").click(); });
     expect(caption()).toMatch(/Press Simulate/);
     expect(document.querySelector(".fbox.on")).toBeNull();
   });
@@ -66,7 +66,7 @@ describe("diagram", () => {
     act(() => { screen.getByRole("button", { name: "Simulate" }).click(); });
     await act(async () => { await vi.advanceTimersByTimeAsync(450); });
     expect(caption()).toMatch(/Step 2 of/);
-    act(() => { screen.getByRole("button", { name: "Reset" }).click(); });
+    act(() => { screen.getByTestId("diagram-reset").click(); });
     fireEvent.change(screen.getByLabelText("Speed"), { target: { value: "0.5" } });
     act(() => { screen.getByRole("button", { name: "Simulate" }).click(); });
     await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
@@ -87,7 +87,7 @@ describe("diagram", () => {
     const setBoxes = vi.fn();
     const moved = START_BOXES.map((b) => ({ ...b, position: { x: 1, y: 1 } }));
     render(<DiagramTab app={{ cursor: -1, setCursor: vi.fn(), boxes: moved, setBoxes, theme: "light", flows: FLOWS, flowId: "login", setFlowId: vi.fn() }} />);
-    await userEvent.click(screen.getByRole("button", { name: "Reset" }));
+    await userEvent.click(screen.getByTestId("diagram-reset"));
     expect(setBoxes).toHaveBeenCalledWith(START_BOXES);
   });
 

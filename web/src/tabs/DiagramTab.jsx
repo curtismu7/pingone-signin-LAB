@@ -93,7 +93,7 @@ export default function DiagramTab({ app }) {
           <select value={speed} onChange={(e) => setSpeed(e.target.value)}>{SPEEDS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select>
         </label>
         <Btn type="button" className="primary" onClick={simulate} disabled={running}>Simulate</Btn>
-        <button type="button" onClick={reset}>Reset</button>
+        <button type="button" onClick={reset} data-testid="diagram-reset">Reset</button>
         {stepBy && <Btn type="button" onClick={() => { setRunning(false); stepBy(-1); }} disabled={cursor <= 0}>Previous step</Btn>}
         {stepBy && <Btn type="button" onClick={() => { setRunning(false); stepBy(1); }} disabled={cursor >= steps.length - 1}>Next step</Btn>}
       </div>

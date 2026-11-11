@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ShelfLink from "./ShelfLink.jsx";
 import ReturnLink from "../return-link/ReturnLink.jsx";
 import { pageTraceparent } from "../lib/traceparent.js";
+import TopMenu from "../top-menu/TopMenu.jsx";
 
 // Shown when the server refuses Real (409), or as the Real button's tooltip while it is unavailable. The server's /api/info
 // reason is the honest one; this is the fallback only if the server could not be asked.
@@ -10,7 +11,7 @@ export const LIVE_REFUSED = "Live mode is not available in this lab. It is an of
 // The header on every page, including while the lab is still loading: the title, the Mock | Real toggle, the mode, and the controls.
 // `catalog`, `onVertical` and `onReset` are absent until the lab has loaded. Rule 19: the toggle is server-side (POST /api/mode);
 // Real is disabled with the server's reason while it is unavailable, so a disabled button sends nothing.
-export default function Header({ catalog = null, onMock, onLive, modeInfo, present, onPresent, theme, onTheme, onVertical = null, onReset = null }) {
+export default function Header({ catalog = null, onMock, onLive, modeInfo, present, onPresent, theme, onTheme, onVertical = null, onReset = null, talkActive = false, onTalk = null }) {
   const customer = catalog?.customer || {};
   const realAvailable = modeInfo ? modeInfo.realAvailable !== false : null; // null = not known yet
   const [note, setNote] = useState("");
@@ -30,27 +31,15 @@ export default function Header({ catalog = null, onMock, onLive, modeInfo, prese
         <div className="tools-right">
           <ReturnLink app="pingone-signin" variant="header" />
           <ShelfLink traceparent={pageTraceparent} />
-          <div className="seg mode-toggle" role="group" aria-label="Mode">
-            <button type="button" aria-pressed="true" onClick={() => { setNote(""); onMock(); }} data-testid="mode-mock">Mock</button>
-            <button type="button" aria-pressed="false" disabled={realAvailable === false}
-              title={realAvailable === false ? (modeInfo?.realReason || LIVE_REFUSED) : undefined} onClick={pressLive} data-testid="mode-live">Live</button>
-          </div>
-          {catalog && onVertical && (
-            <label className="inline">Vertical
-              <select value={catalog.vertical} onChange={(e) => onVertical(e.target.value)} aria-label="Vertical">
-                {catalog.verticals.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
-            </label>
-          )}
-          {onReset && <button type="button" onClick={onReset}>Reset lab</button>}
-          <button type="button" aria-pressed={present} onClick={onPresent} title="Presenter mode (P, Esc to leave): large text, no raw panes, arrow keys step the diagram">Present</button>
-          <label className="inline">Theme
-            <select value={theme} onChange={(e) => onTheme(e.target.value)} data-testid="theme">
-              <option value="auto">Auto</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
+          <TopMenu
+            vertical={catalog && onVertical ? { value: catalog.vertical, onChange: onVertical, options: catalog.verticals.map((v) => v.id) } : undefined}
+            theme={{ value: theme, onChange: onTheme }}
+            present={{ active: present, onToggle: onPresent, label: "Present" }}
+            talkTrack={onTalk ? { active: talkActive, onToggle: onTalk } : undefined}
+            help={{ href: "https://github.com/curtismu7/pingone-signin-LAB#readme" }}
+            version={modeInfo?.version || null}
+            onReset={onReset ? () => onReset() : undefined}
+          />
         </div>
       </header>
       {note && <p className="mode-note" role="status" data-testid="mode-note">{note}</p>}

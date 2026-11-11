@@ -96,7 +96,7 @@ export function createApp({
   // Rule 19: the Mock/Real toggle. This lab is an offline mock with no live variant, so Real is honestly unavailable;
   // the toggle still exists and switching to it is a 409 with the reason.
   const REAL_UNAVAILABLE = 'Real (live) is not available in this lab. It is an offline mock of a PingOne pi.flow sign-in, with no tenant connection and no credentials, so it stays in Mock. For real PingOne shapes and live use, open pingone-LAB (owner-run, http://127.0.0.1:5500).';
-  api.get('/info', (_req, res) => res.json({ source: 'mock', realAvailable: false, realReason: REAL_UNAVAILABLE }));
+  api.get('/info', (_req, res) => res.json({ source: 'mock', realAvailable: false, realReason: REAL_UNAVAILABLE, version: (() => { try { return JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version || null; } catch { return null; } })() }));
   api.post('/mode', (req, res) => {
     const source = req.body?.source;
     if (source !== 'mock' && source !== 'real') return bad(res, 'source must be exactly "mock" or "real"');

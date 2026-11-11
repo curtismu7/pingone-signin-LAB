@@ -17,7 +17,7 @@ a { color: var(--focus); }
 .mode { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border: 1px dashed var(--status-info); color: var(--status-info); border-radius: 4px; }
 .customer { font-size: 14px; font-weight: 600; color: var(--muted); }
 
-.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 12px 0; }
+.top { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 12px 0; }
 .tools-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .inline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .note { margin: 4px 0; min-height: 20px; }

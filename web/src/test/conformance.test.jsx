@@ -56,7 +56,7 @@ describe("traceparent on every hop (rule 14)", () => {
     await user.click(screen.getByRole("tab", { name: /Scenarios/ }));
     await user.click(screen.getByRole("button", { name: "Run S01" }));
     await screen.findByTestId("result-S01");
-    await user.click(screen.getByRole("button", { name: "Reset lab" }));
+    await user.click(screen.getByTestId("reset"));
     await waitFor(() => expect(screen.getByTestId("reset-note")).toHaveTextContent(/Lab reset/));
     expect(fake.state.calls.length).toBeGreaterThan(15);
     const missing = fake.state.calls.filter((c) => !TRACEPARENT_RE.test(tpOf(c) || ""));

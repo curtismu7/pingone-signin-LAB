@@ -33,11 +33,11 @@ describe("shell", () => {
 
   it("theme select sets data-theme", async () => {
     const user = await open();
-    await user.selectOptions(screen.getByTestId("theme"), "light");
+    await user.selectOptions(screen.getByTestId("theme-select"), "light");
     expect(document.documentElement.dataset.theme).toBe("light");
-    await user.selectOptions(screen.getByTestId("theme"), "dark");
+    await user.selectOptions(screen.getByTestId("theme-select"), "dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
-    await user.selectOptions(screen.getByTestId("theme"), "auto");
+    await user.selectOptions(screen.getByTestId("theme-select"), "auto");
     expect(document.documentElement.dataset.theme).toBeUndefined();
     expect(localStorage.getItem("psl.theme")).toBeNull();
   });
@@ -54,7 +54,7 @@ describe("shell", () => {
     const user = await open();
     await user.click(screen.getByRole("button", { name: /Open the flow/ }));
     await enabledField("Username");
-    await user.click(screen.getByRole("button", { name: "Reset lab" }));
+    await user.click(screen.getByTestId("reset"));
     await waitFor(() => expect(screen.getByTestId("reset-note")).toHaveTextContent(/Lab reset/));
     expect(fake.state.calls.some((c) => c.method === "POST" && c.path === "/api/reset")).toBe(true);
     expect(screen.getByTestId("flow-status")).toHaveTextContent("no flow open");

@@ -1,6 +1,6 @@
 import React from "react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { startFakeServer } from "./fakeServer.js";
 import { open } from "./helpers.jsx";
 import Header from "../components/Header.jsx";
@@ -20,9 +20,7 @@ describe("Mock | Live toggle (every page)", () => {
     for (const [id, label] of TABS) {
       await user.click(screen.getByRole("tab", { name: new RegExp(label) }));
       await waitFor(() => expect(screen.getByRole("tab", { name: new RegExp(label) })).toHaveAttribute("aria-selected", "true"));
-      expect(screen.getByRole("group", { name: "Mode" })).toBeInTheDocument();
-      expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByTestId("mode-live")).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByTestId("top-menu")).toBeInTheDocument();
       expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
       expect(screen.getByTestId("banner")).toHaveAttribute("data-state", "mock");
       expect(id).toBeTruthy();
@@ -31,22 +29,18 @@ describe("Mock | Live toggle (every page)", () => {
 
   it("is in the header while the lab is still loading, and when it could not load", () => {
     render(<Header modeInfo={null} onMock={() => {}} onLive={() => {}} present={false} onPresent={() => {}} theme="auto" onTheme={() => {}} />);
-    expect(screen.getByRole("group", { name: "Mode" })).toBeInTheDocument();
+    expect(screen.getByTestId("top-menu")).toBeInTheDocument();
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
-    expect(screen.queryByRole("button", { name: "Reset lab" })).toBeNull();
+    expect(screen.queryByTestId("reset")).toBeNull();
   });
 
-  it("Real is disabled with the server's honest reason (409 contract), and the page stays Mock; Mock clears the note", async () => {
+  it("no mode control renders (Mock is the only mode), and nothing the page does sends /api/mode", async () => {
     const user = await open();
-    await waitFor(() => expect(screen.getByTestId("mode-live")).toBeDisabled());
-    expect(screen.getByTestId("mode-live").getAttribute("title")).toMatch(/Real \(live\) is not available in this lab/);
-    await user.click(screen.getByTestId("mode-live")); // a disabled button sends nothing
-    expect(fake.state.calls.some((c) => c.path === "/api/mode")).toBe(false);
-    expect(screen.getByTestId("mode-mock")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("mode-live")).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByTestId("mode-select")).toBeNull();
+    expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK: offline, no tenant/);
-    await user.click(screen.getByTestId("mode-mock"));
-    expect(screen.queryByTestId("mode-note")).toBeNull();
+    for (const [id, label] of TABS) { await user.click(screen.getByRole("tab", { name: new RegExp(label) })); await waitFor(() => expect(screen.getByRole("tab", { name: new RegExp(label) })).toHaveAttribute("aria-selected", "true")); }
+    expect(fake.state.calls.some((c) => c.path === "/api/mode")).toBe(false);
   });
 
   it("the server answers GET /api/info with the rule-19 shape and 409s a Real switch", async () => {
@@ -68,7 +62,7 @@ describe("presenter mode keys", () => {
     await user.keyboard("p");
     await waitFor(() => expect(present()).toBe(true));
     expect(screen.getByTestId("banner")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Present" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("presenter")).toHaveAttribute("aria-pressed", "true");
     await user.keyboard("{Escape}");
     await waitFor(() => expect(present()).toBe(false));
     await user.keyboard("P");
