@@ -34,9 +34,11 @@ describe("Mock | Live toggle (every page)", () => {
     expect(screen.queryByTestId("reset")).toBeNull();
   });
 
-  it("no mode control renders (Mock is the only mode), and nothing the page does sends /api/mode", async () => {
+  it("the shared TopMenu's mode select shows Mock, Real is disabled, and nothing the page does sends /api/mode", async () => {
     const user = await open();
-    expect(screen.queryByTestId("mode-select")).toBeNull();
+    expect(screen.getByTestId("mode-select")).toHaveValue("mock");
+    const real = screen.getByTestId("mode-real");
+    expect(real.disabled).toBe(true);
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK: offline, no tenant/);
     for (const [id, label] of TABS) { await user.click(screen.getByRole("tab", { name: new RegExp(label) })); await waitFor(() => expect(screen.getByRole("tab", { name: new RegExp(label) })).toHaveAttribute("aria-selected", "true")); }
