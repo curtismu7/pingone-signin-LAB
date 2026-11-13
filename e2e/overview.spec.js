@@ -46,7 +46,7 @@ test('diagram: drag a box, Simulate, Reset', async ({ page }) => {
   await page.getByLabel('Flow').selectOption('ciba');
   await expect(page.getByTestId('caption')).toContainText('Press Simulate');
 
-  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await page.locator('#main').getByRole('button', { name: 'Reset', exact: true }).click(); // the diagram's own Reset (the TopMenu's is in the header)
   await expect(page.getByTestId('caption')).toContainText('Press Simulate');
   await expect(page.locator('.react-flow__edge.edge-on')).toHaveCount(0);
   expect(await node.evaluate((n) => n.style.transform)).toBe(before);
@@ -57,7 +57,7 @@ test('diagram: drag a box, Simulate, Reset', async ({ page }) => {
   expect(await allTransforms()).not.toEqual(initial);
   await page.getByRole('tab', { name: /Scenarios/ }).click(); await page.getByRole('tab', { name: /Diagram/ }).click();
   expect(await allTransforms()).not.toEqual(initial);
-  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await page.locator('#main').getByRole('button', { name: 'Reset', exact: true }).click(); // the diagram's own Reset (the TopMenu's is in the header)
   expect(await allTransforms()).toEqual(initial);
 });
 
@@ -66,7 +66,7 @@ test('light and dark theme toggle', async ({ page }) => {
   await page.goto('/#/signin');
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const light = await bg();
-  const picker = page.getByTestId('theme');
+  const picker = page.getByTestId('theme-select');
   await picker.selectOption('light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await picker.selectOption('dark');
@@ -112,7 +112,7 @@ test('tour of every tab: zero console errors and no page errors', async ({ page,
   await page.getByRole('button', { name: 'Simulate' }).click();
   await page.getByRole('tab', { name: /Raw/ }).click();
   await expect(page.getByTestId('raw-request').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Reset lab' }).click();
+  await page.getByTestId('reset').click(); // the shared TopMenu's Reset (the lab's reset-lab)
   await expect(page.getByTestId('reset-note')).toContainText('Lab reset');
   expect(consoleErrors).toEqual([]);
 });
@@ -186,7 +186,7 @@ test('Reset lab (the header button) also puts the diagram boxes back', async ({ 
   await page.mouse.move(box.x + box.width / 2 + 60, box.y + 90, { steps: 6 });
   await page.mouse.up();
   expect(await positions()).not.toEqual(initial);
-  await page.getByRole('button', { name: 'Reset lab' }).click();
+  await page.getByTestId('reset').click(); // the shared TopMenu's Reset (the lab's reset-lab)
   await expect(page.getByTestId('reset-note')).toContainText('Lab reset');
   expect(await positions()).toEqual(initial);
 });

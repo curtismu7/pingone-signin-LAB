@@ -32,6 +32,7 @@ export default function Header({ catalog = null, onMock, onLive, modeInfo, prese
           <ReturnLink app="pingone-signin" variant="header" />
           <ShelfLink traceparent={pageTraceparent} />
           <TopMenu
+            mode={{ value: modeInfo?.source === "real" ? "real" : "mock", onChange: (m) => (m === "real" ? pressLive() : onMock()), realAvailable: modeInfo ? modeInfo.realAvailable !== false : null, realHint: modeInfo?.realReason || LIVE_REFUSED }}
             vertical={catalog && onVertical ? { value: catalog.vertical, onChange: onVertical, options: catalog.verticals.map((v) => v.id) } : undefined}
             theme={{ value: theme, onChange: onTheme }}
             present={{ active: present, onToggle: onPresent, label: "Present" }}
