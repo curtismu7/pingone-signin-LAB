@@ -12,10 +12,11 @@ test('happy login: password only, tokens decoded, cookie rotates in the trace', 
   await page.getByRole('button', { name: /Exchange the code/ }).click();
   await expect(page.getByTestId('signed-in')).toBeVisible();
   const tokens = page.getByTestId('tokens');
-  await expect(tokens.getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^acr/ })).toContainText('mock:single');
-  await expect(tokens.getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^amr/ })).toContainText('pwd');
-  await expect(tokens.getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^auth_time/ })).toContainText('T');
-  await expect(tokens.getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^nonce/ })).toContainText('matches the nonce we sent');
+  const claim = (t, name) => t.getByLabel('id_token claims', { exact: true }).locator('.jform__row', { hasText: new RegExp(`^${name}`) }); // the claims pane in its Form view
+  await expect(claim(tokens, 'acr')).toContainText('mock:single');
+  await expect(claim(tokens, 'amr')).toContainText('pwd');
+  await expect(claim(tokens, 'auth_time')).toContainText(/\d{4}-\d{2}-\d{2}/);
+  await expect(tokens.getByTestId('nonce-check')).toContainText('matches the nonce we sent');
   // The trace pane has every call; the shortened cookie differs from step to step (rotation) and never shows a full value.
   const trace = await page.getByRole('region', { name: 'Trace' }).evaluate((e) => e.textContent);
   expect(trace).toContain('********');
@@ -37,8 +38,9 @@ test('MFA login: device selection then the passcode', async ({ page }) => {
   await page.getByRole('button', { name: 'Verify' }).click();
   await page.getByRole('button', { name: /Resume/ }).click();
   await page.getByRole('button', { name: /Exchange the code/ }).click();
-  await expect(page.getByTestId('tokens').getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^acr/ })).toContainText('mock:multi');
-  await expect(page.getByTestId('tokens').getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^amr/ })).toContainText('otp');
+  const claims = page.getByTestId('tokens').getByLabel('id_token claims', { exact: true });
+  await expect(claims.locator('.jform__row', { hasText: /^acr/ })).toContainText('mock:multi');
+  await expect(claims.locator('.jform__row', { hasText: /^amr/ })).toContainText('otp');
 });
 
 test('wrong password, then success', async ({ page, consoleErrors }) => {

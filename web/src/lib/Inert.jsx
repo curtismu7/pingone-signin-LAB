@@ -8,13 +8,10 @@ export function reveal(text) {
   return String(text ?? "").split(HIDDEN).map((part, i) => (i % 2 ? { chip: `[U+${part.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}]` } : { text: part })).filter((p) => p.chip || p.text);
 }
 
-export function Inert({ text, block = false, testid = "inert" }) {
-  const Tag = block ? "pre" : "span";
+export function Inert({ text, testid = "inert" }) {
   return (
-    <Tag className={`inert${block ? " inert--block" : ""}`} data-testid={testid}>
+    <span className="inert" data-testid={testid}>
       {reveal(text).map((p, i) => (p.chip ? <span key={i} className="chip" title="Invisible or look-alike character, shown instead of run">{p.chip}</span> : <React.Fragment key={i}>{p.text}</React.Fragment>))}
-    </Tag>
+    </span>
   );
 }
-
-export const pretty = (v) => (typeof v === "string" ? v : JSON.stringify(v, null, 2));

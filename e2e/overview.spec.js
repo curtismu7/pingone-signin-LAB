@@ -111,7 +111,7 @@ test('tour of every tab: zero console errors and no page errors', async ({ page,
   await page.getByRole('tab', { name: /Diagram/ }).click();
   await page.getByRole('button', { name: 'Simulate' }).click();
   await page.getByRole('tab', { name: /Raw/ }).click();
-  await expect(page.getByTestId('raw-request').first()).toBeVisible();
+  await expect(page.getByTestId('raw-request-box').first()).toBeVisible();
   await page.getByTestId('reset').click(); // the shared TopMenu's Reset (the lab's reset-lab)
   await expect(page.getByTestId('reset-note')).toContainText('Lab reset');
   expect(consoleErrors).toEqual([]);

@@ -1,6 +1,7 @@
 import React from "react";
 import { Inert } from "../lib/Inert.jsx";
 import { rawMessage } from "../lib/trace.js";
+import Json from "../components/JsonPane.jsx";
 
 // Every request and response the page has made, as HTTP text. Cookie values appear only in the server's shortened form.
 export default function RawTab({ app }) {
@@ -17,8 +18,8 @@ export default function RawTab({ app }) {
           {entries.map((e) => { const m = rawMessage(e); return (
             <div key={e.n}>
               <h4><Inert text={`${e.n}. ${e.title}`} /></h4>
-              <Inert block text={m.request} testid="raw-request" />
-              <Inert block text={m.response} testid="raw-response" />
+              <Json value={m.request} label={`Request ${e.n}`} testId="raw-request" />
+              <Json value={m.response} label={`Response ${e.n}`} testId="raw-response" />
             </div>
           ); })}
         </section>

@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { act } from "@testing-library/react";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { startFakeServer } from "./fakeServer.js";
-import { open } from "./helpers.jsx";
+import { open, claim } from "./helpers.jsx";
 
 let fake;
 beforeAll(async () => { fake = await startFakeServer(); });
@@ -43,7 +43,7 @@ describe("CIBA tab", () => {
     expect(await screen.findByTestId("phone-result")).toHaveTextContent("Approve");
     await user.click(screen.getByRole("button", { name: "Poll now" }));
     await waitFor(() => expect(screen.getByTestId("poll-state")).toHaveTextContent("approved"));
-    expect(within(within(screen.getByTestId("tokens")).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^amr/ })).toHaveTextContent("ciba");
+    expect(claim(screen.getByTestId("tokens"), "amr")).toHaveTextContent("ciba");
     expect(screen.getByRole("button", { name: "Poll now" })).toHaveAttribute("aria-disabled", "true");
   });
 

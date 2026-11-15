@@ -39,7 +39,7 @@ describe("traceparent on every hop (rule 14)", () => {
     expect((pane.textContent.match(/traceparent: 00-[0-9a-f]{32}-[0-9a-f]{16}-01/g) || []).length).toBe(8);
     // the Raw tab shows the header on every request and every answer of the run
     await user.click(screen.getByRole("tab", { name: /Raw/ }));
-    const raws = [...screen.getAllByTestId("raw-request"), ...screen.getAllByTestId("raw-response")];
+    const raws = [...screen.getAllByTestId("raw-request-box"), ...screen.getAllByTestId("raw-response-box")];
     expect(raws).toHaveLength(8);
     for (const r of raws) expect(r.textContent).toMatch(/traceparent: 00-[0-9a-f]{32}-[0-9a-f]{16}-01/);
     // step-up, CIBA (with the phone), scenarios, reset
