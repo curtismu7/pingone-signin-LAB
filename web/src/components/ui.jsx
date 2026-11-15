@@ -1,6 +1,8 @@
 import React from "react";
-import { Inert, pretty } from "../lib/Inert.jsx";
-import { decodeJwt, when } from "../lib/jwt.js";
+import { Inert } from "../lib/Inert.jsx";
+import { decodeJwt } from "../lib/jwt.js";
+import { rawMessage } from "../lib/trace.js";
+import Json from "./JsonPane.jsx";
 
 // A button that is "disabled" the accessible way: it stays focusable and says aria-disabled, and a click does nothing.
 // (A native disabled button drops out of the tab order and loses focus the moment it is pressed.) Submit buttons are blocked too.
@@ -22,7 +24,7 @@ export function TraceList({ entries, title = "Trace", empty = "Nothing sent yet.
       <h3>{title} <span className="muted small">({entries.length})</span></h3>
       {entries.length === 0 && <p className="muted">{empty}</p>}
       <ol className="trace__list">
-        {entries.map((e, i) => (
+        {entries.map((e, i) => { const m = rawMessage(e); return (
           <li key={e.n} className="trace__item">
             <details open={i === entries.length - 1}>
               <summary>
@@ -32,53 +34,37 @@ export function TraceList({ entries, title = "Trace", empty = "Nothing sent yet.
               </summary>
               {e.note && <p className="small muted"><Inert text={e.note} /></p>}
               <h4>Request</h4>
-              <Inert block text={`${e.request.method} ${e.request.url}\n${Object.entries(e.request.headers || {}).map(([k, v]) => `${k}: ${v}`).join("\n")}${e.request.body !== undefined ? `\n\n${e.request.body}` : ""}`} />
+              <Json value={m.request} label={`Request ${e.n}`} />
               <h4>Response</h4>
-              <Inert block text={`${Object.entries(e.response.headers || {}).flatMap(([k, v]) => (Array.isArray(v) ? v.map((x) => `${k}: ${x}`) : [`${k}: ${v}`])).join("\n")}${Object.keys(e.response.headers || {}).length ? "\n\n" : ""}${pretty(e.response.body)}`} />
+              <Json value={m.response} label={`Response ${e.n}`} />
             </details>
           </li>
-        ))}
+        ); })}
       </ol>
     </section>
   );
 }
 
-const HIGHLIGHT = new Set(["acr", "amr", "auth_time", "nonce"]);
-function Claims({ payload, nonceSent, label }) {
-  return (
-    <table className="claims" aria-label={label}>
-      <thead><tr><th scope="col">Claim</th><th scope="col">Value</th></tr></thead>
-      <tbody>
-        {Object.entries(payload).map(([k, v]) => (
-          <tr key={k} className={HIGHLIGHT.has(k) ? "claim--hi" : ""}>
-            <th scope="row">{k}</th>
-            <td>
-              <Inert text={typeof v === "object" ? JSON.stringify(v) : String(v)} />
-              {k === "auth_time" && <span className="muted small"> ({when(v)})</span>}
-              {k === "acr" && <Mock />}
-              {k === "nonce" && nonceSent && <Pill tone={v === nonceSent ? "ok" : "deny"}>{v === nonceSent ? "matches the nonce we sent" : "DIFFERENT from the nonce we sent"}</Pill>}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
+// acr, amr, auth_time and nonce are what a resource server decides step-up on, so they stand out in the claims.
+const HOT_CLAIMS = ["acr", "amr", "auth_time", "nonce"];
 
-// Decoded tokens. acr, amr, auth_time and nonce are marked: they are what a resource server decides step-up on.
+// Decoded tokens.
 export function TokenView({ result, nonceSent }) {
   if (!result) return null;
   const { tokens, id, access } = result;
+  const nonce = id?.payload?.nonce;
   return (
     <section className="card" aria-label="Tokens" data-testid="tokens">
       <h3>Tokens <Mock>mock tokens</Mock></h3>
       <p className="small muted">HS256, signed with a throwaway key that exists only in this server process, and marked <code>"mock": true</code>. The page decodes them, it does not verify them.</p>
       <h4>id_token claims</h4>
-      {id ? <Claims label="id_token claims" payload={id.payload} nonceSent={nonceSent} /> : <p className="alert" role="alert">The id_token could not be decoded.</p>}
-      <details><summary>access_token claims</summary>{access ? <Claims label="access_token claims" payload={access.payload} /> : <p>Not a decodable JWT.</p>}</details>
+      {id ? <Json value={id.payload} label="id_token claims" testId="id-claims" hot={HOT_CLAIMS} /> : <p className="alert" role="alert">The id_token could not be decoded.</p>}
+      {id && <p className="small muted">The highlighted claims are what a resource server decides step-up on. The acr names are this lab's own <Mock>mock acr name</Mock>.</p>}
+      {id && nonceSent && nonce !== undefined && <p data-testid="nonce-check">nonce: <Pill tone={nonce === nonceSent ? "ok" : "deny"}>{nonce === nonceSent ? "matches the nonce we sent" : "DIFFERENT from the nonce we sent"}</Pill></p>}
+      <details><summary>access_token claims</summary>{access ? <Json value={access.payload} label="access_token claims" testId="access-claims" hot={HOT_CLAIMS} /> : <p>Not a decodable JWT.</p>}</details>
       <details data-dev-only><summary>Raw tokens</summary>
-        <h4>id_token</h4><Inert block text={tokens.id_token} testid="raw-id-token" />
-        <h4>access_token</h4><Inert block text={tokens.access_token} testid="raw-access-token" />
+        <h4>id_token</h4><Json value={tokens.id_token} label="id_token" testId="raw-id-token" />
+        <h4>access_token</h4><Json value={tokens.access_token} label="access_token" testId="raw-access-token" />
       </details>
     </section>
   );

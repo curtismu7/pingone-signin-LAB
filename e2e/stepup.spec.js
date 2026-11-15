@@ -13,7 +13,7 @@ test('step-up: 401 challenge parsed, re-authorize, retry succeeds', async ({ pag
   await page.getByRole('button', { name: 'Re-authorize (step up)' }).click();
   await expect(page.getByTestId('high-acr')).toHaveText('mock:multi');
   await page.getByRole('button', { name: 'Retry POST /rs/transfer' }).click();
-  await expect(page.getByTestId('retry-ok')).toContainText('"transferred":true');
+  await expect(page.getByTestId('retry-ok')).toContainText(/transferred\s*true/); // Form view: the field and its value
   const trace = await page.getByRole('region', { name: 'Trace' }).evaluate((e) => e.textContent);
   expect(trace).toContain('www-authenticate: Bearer error="insufficient_user_authentication"');
   expect(noUnexpectedErrors(consoleErrors, { allowResourceFailures: true })).toEqual([]);

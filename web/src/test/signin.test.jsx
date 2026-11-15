@@ -2,7 +2,7 @@ import React from "react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { hold, jsonResponse, startFakeServer } from "./fakeServer.js";
-import { open, status, enabled } from "./helpers.jsx";
+import { open, status, enabled, claim } from "./helpers.jsx";
 import { PiFlowClient } from "../lib/flow.js";
 import { createTracer } from "../lib/trace.js";
 
@@ -52,10 +52,11 @@ describe("Sign in tab", () => {
     expect(screen.getByRole("button", { name: /Resume/ })).toHaveAttribute("aria-disabled", "true"); // the code is fetched: a second resume would be refused
     await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
     const tokens = await screen.findByTestId("tokens");
-    expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:single");
-    expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^amr/ })).toHaveTextContent("pwd");
-    expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^auth_time/ })).toHaveTextContent(/\d{4}-\d{2}-\d{2}T/);
-    expect(within(within(tokens).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^nonce/ })).toHaveTextContent("matches the nonce we sent");
+    expect(claim(tokens, "acr")).toHaveTextContent("mock:single");
+    expect(claim(tokens, "amr")).toHaveTextContent("pwd");
+    expect(claim(tokens, "auth_time")).toHaveTextContent(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC/); // the Form view adds the date to a timestamp
+    expect(within(tokens).getByTestId("nonce-check")).toHaveTextContent("matches the nonce we sent");
+    for (const k of ["acr", "amr", "auth_time", "nonce"]) expect(claim(tokens, k)).toHaveAttribute("data-hot", "true"); // the claims a resource server decides step-up on stand out
     expect(within(tokens).getAllByText(/mock/i).length).toBeGreaterThan(0);
   });
 
@@ -84,7 +85,7 @@ describe("Sign in tab", () => {
     await user.click(screen.getByRole("button", { name: /Resume/ }));
     await waitFor(() => expect(screen.getByRole("button", { name: /Exchange the code/ })).not.toHaveAttribute("aria-disabled", "true"));
     await user.click(screen.getByRole("button", { name: /Exchange the code/ }));
-    expect(within(within(await screen.findByTestId("tokens")).getByRole("table", { name: "id_token claims" })).getByRole("row", { name: /^acr/ })).toHaveTextContent("mock:multi");
+    expect(claim(await screen.findByTestId("tokens"), "acr")).toHaveTextContent("mock:multi");
   });
 
   it("a wrong password keeps the flow open with an attempt counter, then success", async () => {

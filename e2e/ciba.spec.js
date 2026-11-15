@@ -17,7 +17,7 @@ test('CIBA approve on the mock phone, then tokens', async ({ page, consoleErrors
   await expect(page.getByTestId('phone-result')).toContainText('Approve');
   await page.getByRole('button', { name: 'Poll now' }).click();
   await expect(page.getByTestId('poll-state')).toContainText('approved');
-  await expect(page.getByTestId('tokens').getByRole('table', { name: 'id_token claims' }).getByRole('row', { name: /^amr/ })).toContainText('ciba');
+  await expect(page.getByTestId('tokens').getByLabel('id_token claims', { exact: true }).locator('.jform__row', { hasText: /^amr/ })).toContainText('ciba');
   expect(noUnexpectedErrors(consoleErrors, { allowResourceFailures: true })).toEqual([]);
 });
 

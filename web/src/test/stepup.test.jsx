@@ -1,6 +1,6 @@
 import React from "react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { startFakeServer } from "./fakeServer.js";
 import { open } from "./helpers.jsx";
 import { parseChallenge } from "../lib/stepup.js";
@@ -25,7 +25,10 @@ describe("Step-up tab", () => {
     await user.click(screen.getByRole("button", { name: "Re-authorize (step up)" }));
     await waitFor(() => expect(screen.getByTestId("high-acr")).toHaveTextContent("mock:multi"));
     await user.click(screen.getByRole("button", { name: "Retry POST /rs/transfer" }));
-    expect(await screen.findByTestId("retry-ok")).toHaveTextContent('"transferred":true');
+    const ok = await screen.findByTestId("retry-ok");
+    expect(within(ok).getByLabelText("Transfer response")).toHaveTextContent(/transferredtrue/); // Form view: the field and its value
+    await user.click(within(ok).getByRole("button", { name: "JSON" }));
+    expect(within(ok).getByLabelText("Transfer response")).toHaveTextContent('"transferred": true');
     // the re-authorization really carried the challenge's acr_values
     expect(fake.state.calls.filter((c) => c.path.startsWith("/mock/authorize") && c.path.includes("acr_values=mock%3Amulti"))).toHaveLength(1);
   });

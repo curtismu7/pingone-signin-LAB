@@ -29,7 +29,7 @@ test('this browser\'s passkey (CDP virtual authenticator) on localhost: register
   await expect(page.getByTestId('auth-browser')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('banner')).toContainText('MOCK');
   await page.getByRole('button', { name: 'Get registration options' }).click();
-  await expect(page.getByLabel('registration options')).toContainText('rp.idlocalhost');
+  await expect(page.getByLabel('registration options', { exact: true })).toContainText('rp.idlocalhost');
   await ceremony(page);
   // the passkey really lives in the (virtual) authenticator, bound to rp.id localhost; the RP saw UV and a counter
   const { credentials } = await cdp.send('WebAuthn.getCredentials', { authenticatorId });

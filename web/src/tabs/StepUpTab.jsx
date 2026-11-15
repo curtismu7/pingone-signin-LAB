@@ -2,7 +2,8 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { createTracer } from "../lib/trace.js";
 import { PiFlowClient, callResource } from "../lib/flow.js";
 import { parseChallenge } from "../lib/stepup.js";
-import { Inert, pretty } from "../lib/Inert.jsx";
+import { Inert } from "../lib/Inert.jsx";
+import Json from "../components/JsonPane.jsx";
 import { Mock, Pill, TokenView, TraceList, Unverified, Btn } from "../components/ui.jsx";
 
 const INIT = { low: null, challenge: null, high: null, done: null, balance: null, error: null, busy: false };
@@ -97,7 +98,7 @@ export default function StepUpTab({ app }) {
           </Step>
           <Step n="4" title="Retry the call" state={s.done?.status === 200 ? "done" : s.high ? "now" : "wait"}>
             <Btn type="button" className="primary" disabled={!s.high || s.busy} onClick={stepup.retry}><span className="step-n" aria-hidden="true">4</span> Retry POST /rs/transfer</Btn>
-            {s.done?.status === 200 && <p className="verdict ok" role="status" data-testid="retry-ok">200: <Inert text={JSON.stringify(s.done.body)} /></p>}
+            {s.done?.status === 200 && <div role="status" data-testid="retry-ok"><p className="verdict ok">200: the transfer went through.</p><Json value={s.done.body} label="Transfer response" hot={["transferred", "acr", "auth_age_s"]} /></div>}
           </Step>
         </ol>
         {s.error && <p className="alert" role="alert" data-testid="stepup-error"><Inert text={s.error} /></p>}

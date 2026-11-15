@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { createTracer } from "../lib/trace.js";
 import { browserPasskeySupport, createSimulatedAuthenticator, credentialToJSON, decodeClientDataJSON, pageOrigin, toCreateOptions, toGetOptions } from "../lib/webauthn.js";
-import { Inert, pretty } from "../lib/Inert.jsx";
+import { Inert } from "../lib/Inert.jsx";
+import Json from "../components/JsonPane.jsx";
 import { Btn, Mock, Pill, TraceList, Unverified } from "../components/ui.jsx";
 
 // The Passkey tab: a WebAuthn ceremony against this lab's own mock RP (/mock/passkey), registration then authentication,
@@ -60,11 +61,9 @@ function Step({ n, title, state, children }) {
   );
 }
 
-const Kv = ({ rows, label }) => (
-  <dl className="kv" aria-label={label}>
-    {rows.filter(Boolean).map(([k, v]) => <React.Fragment key={k}><dt>{k}</dt><dd><Inert text={typeof v === "string" ? v : JSON.stringify(v)} /></dd></React.Fragment>)}
-  </dl>
-);
+// What matters in a ceremony: the challenge (replay), where it was made (rp id, origin) and the counter (a clone shows as a counter that did not rise).
+const HOT_PASSKEY = ["challenge", "rp.id", "rpId", "origin", "expected origin", "signCount", "userVerification"];
+const Kv = ({ rows, label }) => <Json value={Object.fromEntries(rows.filter(Boolean))} label={label} hot={HOT_PASSKEY} />;
 
 function ClientData({ cred, testid }) {
   const cd = decodeClientDataJSON(cred.response.clientDataJSON);
@@ -72,7 +71,7 @@ function ClientData({ cred, testid }) {
     <div data-testid={testid}>
       <h4>clientDataJSON, decoded</h4>
       {cd ? <Kv label="clientDataJSON" rows={Object.entries(cd)} /> : <p className="alert" role="alert">clientDataJSON is not JSON.</p>}
-      <details data-dev-only><summary>Raw credential (base64url)</summary><Inert block text={pretty(cred)} /></details>
+      <details data-dev-only><summary>Raw credential (base64url)</summary><Json value={cred} label="Raw credential" /></details>
     </div>
   );
 }
@@ -82,7 +81,7 @@ function AuthData({ a, before, testid }) {
   return (
     <div data-testid={testid}>
       <h4>authenticatorData, parsed by the RP</h4>
-      <Kv label="authenticatorData" rows={[["rpIdHash", a.rpIdHash], ["signCount", before === undefined || before === null ? String(a.signCount) : `${a.signCount} (stored before: ${before})`], a.aaguid && ["aaguid", a.aaguid], a.credentialId && ["credential id", a.credentialId], a.publicKeyJwk && ["public key (JWK)", a.publicKeyJwk]]} />
+      <Kv label="authenticatorData" rows={[["rpIdHash", a.rpIdHash], ["signCount", before === undefined || before === null ? a.signCount : `${a.signCount} (stored before: ${before})`], a.aaguid && ["aaguid", a.aaguid], a.credentialId && ["credential id", a.credentialId], a.publicKeyJwk && ["public key (JWK)", a.publicKeyJwk]]} />
       <p className="flags">{Object.entries(FLAG_TEXT).map(([k, label]) => <Pill key={k} tone={a.flags[k] ? "ok" : "hold"} data-testid={`flag-${k}`}>{k} {a.flags[k] ? "set" : "not set"}<span className="sr-only">: {label}</span></Pill>)}</p>
     </div>
   );

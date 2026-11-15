@@ -33,8 +33,7 @@ input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 main:focus { outline: none; }
 
 .split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-.split > aside { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow: auto; }
-@media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } .split > aside { position: static; max-height: none; } }
+@media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }
 .card { padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .alert { padding: 10px 12px; border-radius: 6px; background: var(--accent-soft); color: var(--danger-text); border: 1px solid var(--danger-text); margin: 8px 0; }
 .controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 20px; }
@@ -76,12 +75,10 @@ main:focus { outline: none; }
 .challenge { margin-top: 8px; padding: 10px 12px; border: 2px dashed var(--danger-text); border-radius: 8px; background: var(--accent-soft); color: var(--text); }
 
 .inert { font-family: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
-.inert--block { display: block; margin: 4px 0; padding: 10px; font-family: var(--font-mono); font-size: 13px; line-height: 1.45; border: 1px dashed var(--border); border-radius: 6px; background: var(--surface-2); color: var(--text); max-height: 320px; overflow: auto; }
 .chip { display: inline-block; padding: 0 4px; border: 1px solid var(--danger-text); border-radius: 4px; background: var(--accent-soft); color: var(--danger-text); font-family: var(--font-mono); font-size: 0.85em; }
 .claims { width: 100%; border-collapse: collapse; }
 .claims th, .claims td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; overflow-wrap: anywhere; font-size: 14px; }
 .claims th[scope=row] { font-family: var(--font-mono); font-weight: 700; }
-.claim--hi { background: var(--surface-2); }
 
 .trace h3 { font-size: 16px; }
 .trace__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
