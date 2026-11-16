@@ -55,7 +55,7 @@ test('diagram: drag a box, Simulate, Reset', async ({ page }) => {
   await page.mouse.move(box.x + box.width / 2, box.y + 10);
   await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 + 80, box.y + 120, { steps: 6 }); await page.mouse.up();
   expect(await allTransforms()).not.toEqual(initial);
-  await page.getByRole('tab', { name: /Scenarios/ }).click(); await page.getByRole('tab', { name: /Diagram/ }).click();
+  await page.getByRole('link', { name: /Scenarios/ }).click(); await page.getByRole('link', { name: /Diagram/ }).click();
   expect(await allTransforms()).not.toEqual(initial);
   await page.locator('#main').getByRole('button', { name: 'Reset', exact: true }).click(); // the diagram's own Reset (the TopMenu's is in the header)
   expect(await allTransforms()).toEqual(initial);
@@ -83,7 +83,7 @@ test('phone width 390px: no horizontal scroll on any tab', async ({ page }) => {
   await page.getByRole('button', { name: /Open the flow/ }).click();
   for (const hash of ['signin', 'stepup', 'ciba', 'passkey', 'scenarios', 'diagram', 'raw', 'talk']) {
     await page.goto(`/#/${hash}`);
-    await expect(page.getByRole('tab', { selected: true })).toBeVisible();
+    await expect(page.locator('.shell-nav a[aria-current="page"]')).toBeVisible();
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(over, `${hash} overflows by ${over}px`).toBeLessThanOrEqual(0);
   }
@@ -94,10 +94,10 @@ test('phone width 390px: no horizontal scroll on any tab', async ({ page }) => {
 test('tour of every tab: zero console errors and no page errors', async ({ page, consoleErrors }) => {
   await page.goto('/');
   for (const name of ['Sign in', 'Step-up', 'CIBA', 'Passkey', 'Scenarios', 'Diagram', 'Raw', 'Talk track']) {
-    await page.getByRole('tab', { name: new RegExp(name) }).click();
-    await expect(page.getByRole('tab', { name: new RegExp(name) })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('link', { name: new RegExp(name) }).click();
+    await expect(page.getByRole('link', { name: new RegExp(name) })).toHaveAttribute('aria-current', 'page');
   }
-  await page.getByRole('tab', { name: /Sign in/ }).click();
+  await page.getByRole('link', { name: /Sign in/ }).click();
   await page.getByRole('button', { name: /Open the flow/ }).click();
   await page.getByLabel('Username').fill('mark');
   await page.getByLabel('Password', { exact: true }).fill('mock-password');
@@ -105,12 +105,12 @@ test('tour of every tab: zero console errors and no page errors', async ({ page,
   await page.getByRole('button', { name: /Resume/ }).click();
   await page.getByRole('button', { name: /Exchange the code/ }).click();
   await expect(page.getByTestId('signed-in')).toBeVisible();
-  await page.getByRole('tab', { name: /Scenarios/ }).click();
+  await page.getByRole('link', { name: /Scenarios/ }).click();
   await page.getByRole('button', { name: 'Run all' }).click();
   await expect(page.getByTestId('scenario-summary')).toContainText('16 of 16');
-  await page.getByRole('tab', { name: /Diagram/ }).click();
+  await page.getByRole('link', { name: /Diagram/ }).click();
   await page.getByRole('button', { name: 'Simulate' }).click();
-  await page.getByRole('tab', { name: /Raw/ }).click();
+  await page.getByRole('link', { name: /Raw/ }).click();
   await expect(page.getByTestId('raw-request-box').first()).toBeVisible();
   await page.getByTestId('reset').click(); // the shared TopMenu's Reset (the lab's reset-lab)
   await expect(page.getByTestId('reset-note')).toContainText('Lab reset');
@@ -125,12 +125,12 @@ test('presenter mode: large text, raw panes hidden, banner still visible, arrow 
   expect(await size()).toBeGreaterThan(normal);
   await expect(page.getByTestId('banner')).toBeVisible();
   await expect(page.getByTestId('banner')).toContainText('MOCK: offline, no tenant');
-  await expect(page.getByRole('tab', { name: /Raw/ })).toBeHidden();
+  await expect(page.getByRole('link', { name: /Raw/ })).toBeHidden();
   await page.getByRole('button', { name: /Open the flow/ }).click();
   await expect(page.getByTestId('flow-status')).toContainText('USERNAME_PASSWORD_REQUIRED');
   await expect(page.getByRole('region', { name: 'Trace' })).toBeHidden();
   await shot(page, '10-presenter-signin');
-  await page.getByRole('tab', { name: /Diagram/ }).click();
+  await page.getByRole('link', { name: /Diagram/ }).click();
   await expect(page.getByTestId('banner')).toBeVisible();
   await page.locator('body').click({ position: { x: 1, y: 1 } });
   await page.keyboard.press('ArrowRight');
@@ -139,11 +139,11 @@ test('presenter mode: large text, raw panes hidden, banner still visible, arrow 
   await expect(page.getByTestId('caption')).toContainText('Step 3 of 7');
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByTestId('caption')).toContainText('Step 2 of 7');
-  await page.getByRole('tab', { name: /Talk track/ }).click();
+  await page.getByRole('link', { name: /Talk track/ }).click();
   await expect(page.getByTestId('banner')).toBeVisible();
   await expect(page.locator('.talk')).toContainText('npm run doctor');
   await page.getByRole('button', { name: 'Present' }).click();
-  await expect(page.getByRole('tab', { name: /Raw/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Raw/ })).toBeVisible();
 });
 
 test('every request the page makes carries a valid traceparent, and the mock answers with the same trace id', async ({ page }) => {
@@ -159,10 +159,10 @@ test('every request the page makes carries a valid traceparent, and the mock ans
   await page.getByRole('button', { name: /Resume/ }).click();
   await page.getByRole('button', { name: /Exchange the code/ }).click();
   await expect(page.getByTestId('signed-in')).toBeVisible();
-  await page.getByRole('tab', { name: /CIBA/ }).click();
+  await page.getByRole('link', { name: /CIBA/ }).click();
   await page.getByRole('button', { name: /Start \(POST/ }).click();
   await expect(page.getByTestId('phone-notification')).toBeVisible();
-  await page.getByRole('tab', { name: /Scenarios/ }).click();
+  await page.getByRole('link', { name: /Scenarios/ }).click();
   await page.getByRole('button', { name: 'Run S01' }).click();
   await expect(page.getByTestId('result-S01')).toHaveText('PASS');
   expect(seen.length).toBeGreaterThanOrEqual(8);

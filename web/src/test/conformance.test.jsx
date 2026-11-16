@@ -38,22 +38,22 @@ describe("traceparent on every hop (rule 14)", () => {
     const pane = screen.getByRole("region", { name: "Trace" });
     expect((pane.textContent.match(/traceparent: 00-[0-9a-f]{32}-[0-9a-f]{16}-01/g) || []).length).toBe(8);
     // the Raw tab shows the header on every request and every answer of the run
-    await user.click(screen.getByRole("tab", { name: /Raw/ }));
+    await user.click(screen.getByRole("link", { name: /Raw/ }));
     const raws = [...screen.getAllByTestId("raw-request-box"), ...screen.getAllByTestId("raw-response-box")];
     expect(raws).toHaveLength(8);
     for (const r of raws) expect(r.textContent).toMatch(/traceparent: 00-[0-9a-f]{32}-[0-9a-f]{16}-01/);
     // step-up, CIBA (with the phone), scenarios, reset
-    await user.click(screen.getByRole("tab", { name: /Step-up/ }));
+    await user.click(screen.getByRole("link", { name: /Step-up/ }));
     await user.click(screen.getByRole("button", { name: "Sign in (low acr)" }));
     await screen.findByTestId("low-acr");
     await user.click(screen.getByRole("button", { name: "Call POST /rs/transfer" }));
     await screen.findByTestId("challenge");
-    await user.click(screen.getByRole("tab", { name: /CIBA/ }));
+    await user.click(screen.getByRole("link", { name: /CIBA/ }));
     await user.click(screen.getByRole("button", { name: /Start \(POST/ }));
     await screen.findByTestId("auth-req-id");
     await user.click(await enabled("Approve"));
     await user.click(screen.getByRole("button", { name: "Poll now" }));
-    await user.click(screen.getByRole("tab", { name: /Scenarios/ }));
+    await user.click(screen.getByRole("link", { name: /Scenarios/ }));
     await user.click(screen.getByRole("button", { name: "Run S01" }));
     await screen.findByTestId("result-S01");
     await user.click(screen.getByTestId("reset"));
@@ -84,7 +84,7 @@ describe("presenter mode (rules 2 and 3)", () => {
     expect(screen.getByTestId("banner").closest("[data-dev-only]")).toBeNull();
     expect(screen.getByTestId("mode")).toBeInTheDocument();
     // everything the CSS hides in presenter mode is marked: the Raw tab, the trace pane, the raw tokens
-    expect(screen.getByRole("tab", { name: /Raw/ })).toHaveAttribute("data-dev-only");
+    expect(screen.getByRole("link", { name: /Raw/ })).toHaveAttribute("data-dev-only");
     expect(screen.getByRole("complementary", { name: "Trace pane" })).toHaveAttribute("data-dev-only");
     expect(screen.getByRole("region", { name: "Trace" })).toHaveAttribute("data-dev-only");
     expect(localStorage.getItem("psl.present")).toBe("1");
@@ -96,7 +96,7 @@ describe("presenter mode (rules 2 and 3)", () => {
     const user = await open("#/signin");
     await user.click(screen.getByRole("button", { name: "Present" }));
     for (const tab of ["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Talk track"]) {
-      await user.click(screen.getByRole("tab", { name: new RegExp(tab) }));
+      await user.click(screen.getByRole("link", { name: new RegExp(tab) }));
       expect(screen.getByTestId("banner")).toBeVisible();
       expect(screen.getByTestId("banner")).toHaveTextContent(/fictional/);
     }
@@ -105,18 +105,18 @@ describe("presenter mode (rules 2 and 3)", () => {
   it("turning presenter mode on while on Raw moves to Sign in (Raw is hidden)", async () => {
     const user = await open("#/raw");
     await user.click(screen.getByRole("button", { name: "Present" }));
-    await waitFor(() => expect(screen.getByRole("tab", { name: /Sign in/ })).toHaveAttribute("aria-selected", "true"));
+    await waitFor(() => expect(screen.getByRole("link", { name: /Sign in/ })).toHaveAttribute("aria-current", "page"));
   });
 
   it("presenter mode on #/raw selects Sign in: the hidden Raw tab is not the selected tab", async () => {
     const user = await open("#/raw");
-    expect(screen.getByRole("tab", { name: /Raw/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("link", { name: /Raw/ })).toHaveAttribute("aria-current", "page");
     await user.click(screen.getByRole("button", { name: "Present" }));
     window.location.hash = "#/raw"; window.dispatchEvent(new HashChangeEvent("hashchange")); // opening the Raw address while presenting
-    await waitFor(() => expect(screen.getByRole("tab", { name: /Sign in/ })).toHaveAttribute("aria-selected", "true"));
-    expect(screen.getByRole("tab", { name: /Raw/ })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: /Raw/ })).toHaveAttribute("tabindex", "-1");
-    expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", "tab-signin");
+    await waitFor(() => expect(screen.getByRole("link", { name: /Sign in/ })).toHaveAttribute("aria-current", "page"));
+    expect(screen.getByRole("link", { name: /Raw/ })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: /Raw/ })).toHaveAttribute("tabindex", "-1");
+    expect(document.getElementById("panel")).toHaveAttribute("aria-labelledby", "tab-signin");
     expect(screen.queryByRole("heading", { name: "Raw HTTP" })).toBeNull();
   });
 
@@ -146,7 +146,7 @@ describe("presenter mode (rules 2 and 3)", () => {
     expect(caption()).toMatch(/Press Simulate/); // not in presenter mode
     await user.click(screen.getByRole("button", { name: "Present" }));
     act(() => { fireEvent.keyDown(screen.getByLabelText("Speed"), { key: "ArrowRight" }); });
-    act(() => { fireEvent.keyDown(screen.getByRole("tab", { name: /Diagram/ }), { key: "ArrowRight" }); });
+    act(() => { fireEvent.keyDown(screen.getByRole("link", { name: /Diagram/ }), { key: "ArrowRight" }); });
     expect(caption()).toMatch(/Press Simulate/); // no step taken by either
   });
 
@@ -177,8 +177,8 @@ describe("presenter mode (rules 2 and 3)", () => {
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Talk track");
     expect(document.querySelector(".talk").textContent).toContain("npm run doctor");
     expect(document.querySelector(".talk img")).toBeNull();
-    await user.click(screen.getByRole("tab", { name: /Talk track/ }));
-    expect(screen.getByRole("tab", { name: /Talk track/ })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("link", { name: /Talk track/ }));
+    expect(screen.getByRole("link", { name: /Talk track/ })).toHaveAttribute("aria-current", "page");
   });
 });
 

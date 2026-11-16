@@ -55,7 +55,7 @@ describe("JSON panes", () => {
     expect(body.textContent).toMatch(/"status": "USERNAME_PASSWORD_REQUIRED"/);
     expect(body.querySelector(".jtok--key")).not.toBeNull();
 
-    await user.click(screen.getByRole("tab", { name: /Raw/ }));
+    await user.click(screen.getByRole("link", { name: /Raw/ }));
     const raw = screen.getAllByTestId("raw-response-box")[0];
     expect(within(raw).getByRole("button", { name: "Form" })).toBeInTheDocument();
     expect(within(raw).getByRole("button", { name: "JSON" })).toBeInTheDocument();

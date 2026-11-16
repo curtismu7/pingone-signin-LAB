@@ -3,8 +3,8 @@
    (status tokens), always with a word beside the colour. */
 html { overflow-x: hidden; }
 body { overflow-wrap: anywhere; }
-.page { max-width: 80rem; margin: 0 auto; padding: 8px 0 24px; }
-h1 { margin: 0; font-size: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+/* Page frame (STANDALONE-UI-PATTERNS.md section 3): <main> is one centred 1100px column; the simulation banner is its first child. */
+.page { max-width: 1100px; margin: 0 auto; padding: 4px 0 32px; }
 h2 { margin: 6px 0 4px; font-size: 24px; }
 h3 { margin: 0 0 8px; font-size: 16px; }
 h4 { margin: 12px 0 4px; font-size: 14px; color: var(--muted); }
@@ -13,24 +13,31 @@ h4 { margin: 12px 0 4px; font-size: 14px; color: var(--muted); }
 .mono, code { font-size: 13px; overflow-wrap: anywhere; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 a { color: var(--focus); }
-.mark { padding: 2px 8px; border-radius: 4px; background: var(--accent); color: var(--on-accent); font-family: var(--font-mono); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
-.mode { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border: 1px dashed var(--status-info); color: var(--status-info); border-radius: 4px; }
-.customer { font-size: 14px; font-weight: 600; color: var(--muted); }
 
-.top { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 12px 0; }
-.tools-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Shell bar (STANDALONE-UI-PATTERNS.md section 1): Core Dark in both themes, Ping Red gradient rule, full-bleed (the -16px cancels
+   the body gutter). The pills stay on one row and the TopMenu wraps below them; at 600px the nav takes its own row and wraps. */
+.shell-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin: 0 -16px; padding: 10px 20px;
+  background: var(--box-dark); color: var(--on-box); border-bottom: 3px solid transparent; border-image: var(--accent-gradient) 1; }
+.shell-bar h1 { margin: 0; color: var(--on-box); font-size: 18px; }
+.shell-brand { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-weight: 700; }
+.shell-logo { display: inline-grid; place-items: center; height: 28px; padding: 0 8px; border-radius: 4px; background: var(--accent-gradient); color: var(--on-accent); font-family: var(--font-mono); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
+.shell-badge { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--on-box); color: var(--on-box); font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.shell-note { font-size: 14px; font-weight: 600; color: var(--on-box); }
+.shell-nav { display: flex; gap: 4px; flex: 1 1 auto; }
+.shell-nav a { padding: 5px 12px; border-radius: 999px; border: 1px solid transparent; color: var(--on-box); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.shell-nav a:hover { border-color: var(--on-box); }
+.shell-nav a[aria-current="page"] { background: var(--accent-gradient); color: var(--on-accent); font-weight: 600; }
+.shell-nav__n { font-family: var(--font-mono); font-size: 12px; margin-right: 2px; }
+.shell-bar .shell-right { margin-left: auto; } /* TopMenu renders .top-menu.shell-right; its own layout stays */
+@media (max-width: 600px) { .shell-bar { gap: 10px; padding: 10px 16px; } .shell-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; } }
 .inline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .note { margin: 4px 0; min-height: 20px; }
 .seg { display: inline-flex; gap: 4px; }
 .mode-note { margin: 4px 0; padding: 8px 12px; border: 1px solid var(--border); border-left: 4px solid var(--status-warn); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 13px; }
-.tabbar { display: flex; overflow-x: auto; gap: 4px; padding: 0 0 4px; border-bottom: 1px solid var(--border); }
-.tab { font-size: 16px; min-height: 48px; white-space: nowrap; border-radius: 8px 8px 0 0; }
-.tab__n { font-family: var(--font-mono); font-size: 13px; margin-right: 4px; }
 button[aria-disabled="true"] { opacity: 0.75; cursor: not-allowed; }
 button.primary[aria-disabled="true"] { opacity: 0.88; }
 input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 .deny { border-color: var(--danger-text); color: var(--danger-text); }
-main:focus { outline: none; }
 
 .split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }

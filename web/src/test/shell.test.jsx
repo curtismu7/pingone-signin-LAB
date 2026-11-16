@@ -1,6 +1,6 @@
 import React from "react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { startFakeServer } from "./fakeServer.js";
 import { open, enabled } from "./helpers.jsx";
 
@@ -19,16 +19,30 @@ describe("shell", () => {
     await open();
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK: offline, no tenant/);
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
-    expect(screen.getAllByRole("tab").map((t) => t.textContent.replace(/^\d+\s*/, ""))).toEqual(["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Raw", "Talk track"]);
-    expect(screen.getByRole("tab", { name: /Sign in/ })).toHaveAttribute("aria-selected", "true");
+    expect(within(screen.getByRole("navigation", { name: "Lab sections" })).getAllByRole("link").map((t) => t.textContent.replace(/^\d+\s*/, ""))).toEqual(["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Raw", "Talk track"]);
+    expect(screen.getByRole("link", { name: /Sign in/ })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("shell bar first (brand, mode, section pills, TopMenu), then main with the banner as its first child", async () => {
+    await open();
+    const bar = document.querySelector("header.shell-bar");
+    expect(bar).not.toBeNull();
+    expect(bar.querySelector(".shell-brand h1")).toHaveTextContent("PingOne Sign-in LAB");
+    expect(bar.querySelector(".shell-brand [data-testid=mode]")).toHaveTextContent("MOCK: offline, no tenant");
+    expect(bar.querySelector('.shell-nav a[aria-current="page"]')).toHaveTextContent("Sign in");
+    expect(bar.querySelector("[data-testid=top-menu]")).toHaveClass("shell-right");
+    const main = screen.getByRole("main");
+    expect(bar.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(main.firstElementChild).toBe(screen.getByTestId("banner"));
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
   it("arrow keys move between tabs", async () => {
     const user = await open();
-    screen.getByRole("tab", { name: /Sign in/ }).focus();
+    screen.getByRole("link", { name: /Sign in/ }).focus();
     await user.keyboard("{ArrowRight}");
-    await waitFor(() => expect(screen.getByRole("tab", { name: /Step-up/ })).toHaveAttribute("aria-selected", "true"));
-    expect(screen.getByRole("tab", { name: /Step-up/ })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole("link", { name: /Step-up/ })).toHaveAttribute("aria-current", "page"));
+    expect(screen.getByRole("link", { name: /Step-up/ })).toHaveFocus();
   });
 
   it("theme select sets data-theme", async () => {
@@ -63,12 +77,12 @@ describe("shell", () => {
   it("there is no redirect login: no redirect button or link, and authorize is only ever sent with response_mode=pi.flow", async () => {
     const user = await open();
     for (const tab of ["Sign in", "Step-up", "CIBA", "Passkey", "Scenarios", "Diagram", "Raw", "Talk track"]) {
-      await user.click(screen.getByRole("tab", { name: new RegExp(tab) }));
+      await user.click(screen.getByRole("link", { name: new RegExp(tab) }));
       expect(screen.queryByRole("button", { name: /redirect|hosted login/i })).toBeNull();
       expect(screen.queryByRole("link", { name: /redirect|hosted login/i })).toBeNull();
       expect(document.querySelector('a[href*="authorize"]')).toBeNull();
     }
-    await user.click(screen.getByRole("tab", { name: /Sign in/ }));
+    await user.click(screen.getByRole("link", { name: /Sign in/ }));
     await user.click(screen.getByRole("button", { name: /Open the flow/ }));
     await enabledField("Username");
     const authz = fake.state.calls.filter((c) => c.path.startsWith("/mock/authorize"));

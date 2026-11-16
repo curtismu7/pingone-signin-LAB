@@ -24,7 +24,7 @@ test('Mock | Live toggle, mode and banner are in the header on every tab; Real i
 
 test('P toggles presenter mode and Esc leaves it; the banner stays; modifier keys and typing are ignored', async ({ page }) => {
   await page.goto('/#/signin');
-  await expect(page.getByRole('tab', { name: /Sign in/ })).toBeVisible(); // the lab has loaded and the key handler is attached
+  await expect(page.getByRole('link', { name: /Sign in/ })).toBeVisible(); // the lab has loaded and the key handler is attached
   const present = () => page.evaluate(() => document.documentElement.dataset.present === '1');
   const settled = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // two frames: React has applied the key
   await page.keyboard.press('p');

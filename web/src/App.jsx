@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getCatalog, getModeInfo, postMode, resetLab } from "./lib/api.js";
 import Banner from "./components/Banner.jsx";
 import Header from "./components/Header.jsx";
@@ -28,6 +28,7 @@ export default function App() {
   const [present, setPresent] = useState(() => read("psl.present", "0") === "1");
   const [theme, setTheme] = useState(() => (["light", "dark"].includes(read("psl.theme", "")) ? read("psl.theme", "") : "auto"));
   const [modeInfo, setModeInfo] = useState(null); // GET /api/info; null = not known yet
+  const [modeNote, setModeNote] = useState(""); // the Real refusal, shown below the banner
   useEffect(() => { getModeInfo().then((r) => setModeInfo(r.ok ? r.data : { realAvailable: false, realReason: null })).catch(() => {}); }, []);
   // Rule 19: the toggle is server-side. Mock is the only mode here, so switching is a POST that the server answers
   // (409 for Real, with the honest reason); the data is reloaded either way.
@@ -61,23 +62,32 @@ export default function App() {
   }, [present, setPresentMode]);
 
   const setThemePersist = (v) => { setTheme(v); };
-  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist, talkActive: tab === "talk", onTalk: () => { if (tab !== "talk") window.location.hash = "#/talk"; } };
+  const shownTab = present && tab === "raw" ? "signin" : tab; // the Raw tab is hidden in presenter mode
+  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), onNote: setModeNote, present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist, talkActive: tab === "talk", onTalk: () => { if (tab !== "talk") window.location.hash = "#/talk"; }, tabs: TABS, tab: shownTab, onTab: (id) => { window.location.hash = `#/${id}`; } };
 
-  const shell = (body, header) => (
-    <>
-      <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
-      <Banner />
-      <ReturnLink app="pingone-signin" />
-      {header || <Header {...head} />}
-      {body}
-    </>
-  );
-  if (loadError) return shell(<main id="main" tabIndex={-1}><div className="page"><p className="alert" role="alert">Could not reach the lab server: {loadError}</p></div></main>);
-  if (!catalog) return shell(<main id="main" tabIndex={-1}><div className="page"><p className="muted" role="status">Loading the mock…</p></div></main>);
-  return <Shell catalog={catalog} flows={flows} setCatalog={setCatalog} tab={tab} theme={theme} present={present} head={head} />;
+  if (loadError) return <Frame head={head} modeNote={modeNote}><p className="alert" role="alert">Could not reach the lab server: {loadError}</p></Frame>;
+  if (!catalog) return <Frame head={head} modeNote={modeNote}><p className="muted" role="status">Loading the mock…</p></Frame>;
+  return <Shell catalog={catalog} flows={flows} setCatalog={setCatalog} tab={tab} shownTab={shownTab} theme={theme} present={present} head={head} modeNote={modeNote} />;
 }
 
-function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
+// The page frame for every state (STANDALONE-UI-PATTERNS.md sections 1-3): the shell bar first, then <main> in the centred
+// 1100px column, whose first child is the simulation banner; the hand-off strip and the Real refusal sit right below it.
+function Frame({ head, modeNote, children }) {
+  return (
+    <>
+      <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
+      <Header {...head} />
+      <main id="main" className="page" tabIndex={-1}>
+        <Banner />
+        <ReturnLink app="pingone-signin" />
+        {modeNote && <p className="mode-note" role="status" data-testid="mode-note">{modeNote}</p>}
+        {children}
+      </main>
+    </>
+  );
+}
+
+function Shell({ catalog, flows, setCatalog, tab, shownTab, theme, present, head, modeNote }) {
   const login = useLogin(catalog);
   const stepup = useStepUp(catalog);
   const ciba = useCiba(catalog);
@@ -87,7 +97,6 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
   const [boxes, setBoxes] = useState(flows.login.boxes);
   const [flowId, setFlowId] = useState("login");
   const [note, setNote] = useState("");
-  const tabRefs = useRef({});
   const customer = catalog.customer || {};
 
   // customer.config: brand colours as CSS tokens (one <style>, no inline styles) and the customer's name in the title.
@@ -105,7 +114,7 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
     if (!present || tab !== "diagram") return undefined;
     const on = (e) => {
       const t = e.target; const tag = t?.tagName;
-      if (/^(INPUT|SELECT|TEXTAREA)$/.test(tag) || t?.getAttribute?.("role") === "tab" || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test(tag) || t?.closest?.(".shell-nav") || e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); stepBy(1); }
       else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); stepBy(-1); }
     };
@@ -120,40 +129,15 @@ function Shell({ catalog, flows, setCatalog, tab, theme, present, head }) {
     catch (e) { setNote(`Reset failed: ${e.message}`); }
   }, [clearAll]);
 
-  const go = (id) => { window.location.hash = `#/${id}`; };
-  const onTabKey = (e) => {
-    const shown = present ? TABS.filter(([id]) => id !== "raw") : TABS; // the Raw tab is hidden (not focusable) in presenter mode
-    const i = shown.findIndex(([id]) => id === shownTab);
-    const to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: shown.length - 1 }[e.key];
-    if (to === undefined) return;
-    e.preventDefault();
-    const [id] = shown[(to + shown.length) % shown.length];
-    go(id); tabRefs.current[id]?.focus();
-  };
-
   const app = { catalog, login, stepup, ciba, passkey, scenarios, cursor, setCursor, boxes, setBoxes, flows, flowId, setFlowId, theme, present, stepBy };
-  const shownTab = present && tab === "raw" ? "signin" : tab; // the Raw tab is hidden in presenter mode
   const Panel = { signin: SignInTab, stepup: StepUpTab, ciba: CibaTab, passkey: PasskeyTab, scenarios: ScenariosTab, diagram: DiagramTab, raw: RawTab, talk: TalkTrackTab }[shownTab] || SignInTab;
 
   return (
-    <>
-      <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
-      <Banner />
-      <ReturnLink app="pingone-signin" />
-      <Header {...head} catalog={catalog} onVertical={pickVertical} onReset={resetServer} />
+    <Frame head={{ ...head, catalog, onVertical: pickVertical, onReset: resetServer }} modeNote={modeNote}>
       <p className="muted small note" role="status" data-testid="reset-note">{note}</p>
-      <div className="tabbar" role="tablist" aria-label="Lab sections" onKeyDown={onTabKey}>
-        {TABS.map(([id, label], i) => (
-          <button key={id} id={`tab-${id}`} data-dev-only={id === "raw" ? "" : undefined} ref={(el) => { tabRefs.current[id] = el; }} type="button" role="tab" aria-selected={id === shownTab} aria-controls="panel" tabIndex={id === shownTab ? 0 : -1} className="tab" onClick={() => go(id)}>
-            <span className="tab__n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span> {label}
-          </button>
-        ))}
-      </div>
-      <main id="main" tabIndex={-1}>
-        <div className="page" id="panel" role="tabpanel" aria-labelledby={`tab-${shownTab}`}>
-          <Panel key={catalog.vertical} app={app} />
-        </div>
-      </main>
-    </>
+      <section id="panel" aria-labelledby={`tab-${shownTab}`}>
+        <Panel key={catalog.vertical} app={app} />
+      </section>
+    </Frame>
   );
 }
