@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased: verification mark in the header
+
+- The header shows this lab's own Verified / In progress mark from the demo shelf, through the shared `VerifyMark` (vendored byte for byte from AI-DEMO-Standalone `shared/verify-mark`, pinned by a test). It sits inside the top menu, after the controls, and reads the same `GET /api/shelf` call the Shelf button makes (with the page's `traceparent`). It shows nothing when the lab is opened on its own port, when the shelf has no mark for it, or when the shelf is unreachable.
+- Tests: a pin test for the vendored files and a header test (own mark only, nothing without a mark, `{shelfUrl}` only, one `traceparent` request).
+
 ## Unreleased: passkey (WebAuthn) ceremony
 
 For Customer Agent LAB use case UC-LEARN16 (it hands off here).
