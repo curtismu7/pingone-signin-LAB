@@ -9,7 +9,7 @@ export async function open(hash = "#/signin") {
   window.location.hash = hash;
   const user = userEvent.setup();
   render(<App />);
-  await screen.findByRole("tablist");
+  await screen.findByTestId("reset-note"); // the lab has loaded (the shell bar is there while loading too)
   return user;
 }
 export const status = () => screen.getByTestId("flow-status").textContent;

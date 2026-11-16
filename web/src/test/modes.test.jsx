@@ -18,8 +18,8 @@ describe("Mock | Live toggle (every page)", () => {
   it("is in the header on every tab, Mock is pressed, and the banner and the mode say mock", async () => {
     const user = await open();
     for (const [id, label] of TABS) {
-      await user.click(screen.getByRole("tab", { name: new RegExp(label) }));
-      await waitFor(() => expect(screen.getByRole("tab", { name: new RegExp(label) })).toHaveAttribute("aria-selected", "true"));
+      await user.click(screen.getByRole("link", { name: new RegExp(label) }));
+      await waitFor(() => expect(screen.getByRole("link", { name: new RegExp(label) })).toHaveAttribute("aria-current", "page"));
       expect(screen.getByTestId("top-menu")).toBeInTheDocument();
       expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
       expect(screen.getByTestId("banner")).toHaveAttribute("data-state", "mock");
@@ -41,7 +41,7 @@ describe("Mock | Live toggle (every page)", () => {
     expect(real.disabled).toBe(true);
     expect(screen.getByTestId("mode")).toHaveTextContent("MOCK: offline, no tenant");
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK: offline, no tenant/);
-    for (const [id, label] of TABS) { await user.click(screen.getByRole("tab", { name: new RegExp(label) })); await waitFor(() => expect(screen.getByRole("tab", { name: new RegExp(label) })).toHaveAttribute("aria-selected", "true")); }
+    for (const [id, label] of TABS) { await user.click(screen.getByRole("link", { name: new RegExp(label) })); await waitFor(() => expect(screen.getByRole("link", { name: new RegExp(label) })).toHaveAttribute("aria-current", "page")); }
     expect(fake.state.calls.some((c) => c.path === "/api/mode")).toBe(false);
   });
 
@@ -110,8 +110,8 @@ describe("accessibility", () => {
   it("keeps the main landmark (the tab panel is inside it, not the landmark itself)", async () => {
     await open();
     const main = screen.getByRole("main");
-    expect(main).toContainElement(screen.getByRole("tabpanel"));
-    expect(screen.getByRole("tabpanel")).not.toBe(main);
+    expect(main).toContainElement(document.getElementById("panel"));
+    expect(document.getElementById("panel")).not.toBe(main);
   });
 
   it("a not-yet-ready action button is aria-disabled, not disabled, stays focusable, and a click does nothing", async () => {

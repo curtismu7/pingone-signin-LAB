@@ -20,7 +20,7 @@ describe("return link", () => {
   it("?from=ai-demo-standalone: strip named for AI Demo Standalone, Back to its fixed proxy path", async () => {
     window.history.replaceState(null, "", "/pingone-signin-lab/?from=ai-demo-standalone&uc=UC12#/signin");
     render(<App />);
-    await screen.findByRole("tablist");
+    await screen.findByTestId("reset-note"); // the lab has loaded (the shell bar is there while loading too)
     const note = screen.getByRole("note", { name: "Opened from AI Demo Standalone" });
     expect(note.textContent).toContain("UC12");
     expect(screen.getAllByRole("button", { name: /Back to AI Demo Standalone/ })).toHaveLength(2);
@@ -36,14 +36,15 @@ describe("return link", () => {
     for (const [h, f] of pins) expect(createHash("sha256").update(fs.readFileSync(path.join(dir, f))).digest("hex"), f).toBe(h);
   });
 
-  it("?from=customer-agent: banner first, strip right below, header Back in the tools", async () => {
+  it("?from=customer-agent: banner first, strip right below, header Back in the shell bar", async () => {
     window.history.replaceState(null, "", "/?from=customer-agent&uc=UC-LOGIN&vertical=banking#/signin");
     render(<App />);
-    await screen.findByRole("tablist");
+    await screen.findByTestId("reset-note"); // the lab has loaded (the shell bar is there while loading too)
     const note = screen.getByRole("note", NOTE);
     expect(note.textContent).toContain("UC-LOGIN");
     expect(screen.getByTestId("banner").nextElementSibling).toBe(note);
-    expect(document.querySelector(".tools-right > button.return-link--header")).not.toBeNull();
+    expect(document.querySelector("header.shell-bar .shell-right button.return-link--header")).not.toBeNull(); // header Back in the shell bar TopMenu
+    expect(document.querySelector("main").firstElementChild).toBe(screen.getByTestId("banner")); // shell bar first, then main with the banner first
     expect(screen.getAllByRole("button", { name: /Back to Customer Agent LAB/ })).toHaveLength(2);
   });
 
@@ -51,7 +52,7 @@ describe("return link", () => {
     for (const q of ["/", "/?from=elsewhere&uc=UC-LOGIN", "/?from=customer-agent&uc=%3Cb%3E", "/?from=customer-agent&uc=UC-LOGIN&vertical=a%20b"]) {
       window.history.replaceState(null, "", `${q}#/signin`);
       render(<App />);
-      await screen.findByRole("tablist");
+      await screen.findByTestId("reset-note"); // the lab has loaded (the shell bar is there while loading too)
       expect(screen.queryByRole("button", { name: /Back to/ })).toBeNull();
       expect(screen.queryByRole("note", NOTE)).toBeNull();
       cleanup();
