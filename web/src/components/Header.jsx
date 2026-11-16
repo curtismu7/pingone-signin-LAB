@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ShelfLink from "./ShelfLink.jsx";
+import VerifyMark from "./VerifyMark.jsx";
 import ReturnLink from "../return-link/ReturnLink.jsx";
 import { pageTraceparent } from "../lib/traceparent.js";
 import TopMenu from "../top-menu/TopMenu.jsx";
@@ -40,7 +41,9 @@ export default function Header({ catalog = null, onMock, onLive, modeInfo, prese
             help={{ href: "https://github.com/curtismu7/pingone-signin-LAB#readme" }}
             version={modeInfo?.version || null}
             onReset={onReset ? () => onReset() : undefined}
-          />
+          >
+            <VerifyMark id="pingone-signin-lab" traceparent={pageTraceparent} />
+          </TopMenu>
         </div>
       </header>
       {note && <p className="mode-note" role="status" data-testid="mode-note">{note}</p>}
