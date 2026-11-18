@@ -18,6 +18,14 @@ import TalkTrackTab from "./tabs/TalkTrackTab.jsx";
 import { brandCss } from "./lib/brand.js";
 
 export const TABS = [["signin", "Sign in"], ["stepup", "Step-up"], ["ciba", "CIBA"], ["passkey", "Passkey"], ["scenarios", "Scenarios"], ["diagram", "Diagram"], ["raw", "Raw"], ["talk", "Talk track"]];
+const talkStepsOf = () => {
+  const steps = []; let n = 0;
+  for (const line of talkMd.split("\n")) {
+    const m = line.match(/^\d+\.\s+(?:"(.+?)"|\*\*(.+?)\.\*\*\s*(.*))$/);
+    if (m) { n += 1; steps.push({ id: `s${n}`, title: (m[1] || m[2]).slice(0, 60), say: m[1] || m[3] }); }
+  }
+  return steps.length ? steps : [{ id: "s1", title: "Talk track", say: talkMd.slice(0, 600) }];
+};
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, v); } catch { /* not remembered */ } };
 const tabFromHash = () => { const id = window.location.hash.replace(/^#\/?/, "").split("?")[0]; return TABS.some(([t]) => t === id) ? id : "signin"; };
@@ -66,14 +74,7 @@ export default function App() {
 
   const setThemePersist = (v) => { setTheme(v); };
   const shownTab = present && tab === "raw" ? "signin" : tab; // the Raw tab is hidden in presenter mode
-  const talkSteps = (() => {
-    const steps = []; let n = 0;
-    for (const line of talkMd.split("\n")) {
-      const m = line.match(/^\d+\.\s+(?:"(.+?)"|\*\*(.+?)\.\*\*\s*(.*))$/);
-      if (m) { n += 1; steps.push({ id: `s${n}`, title: (m[1] || m[2]).slice(0, 60), say: m[1] || m[3] }); }
-    }
-    return steps.length ? steps : [{ id: "s1", title: "Talk track", say: talkMd.slice(0, 600) }];
-  })();
+
   const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), onNote: setModeNote, present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist, talkActive: talkOpen, onTalk: () => setTalkOpen((v) => !v), tabs: TABS, tab: shownTab, onTab: (id) => { window.location.hash = `#/${id}`; } };
 
   if (loadError) return <Frame head={head} modeNote={modeNote}><p className="alert" role="alert">Could not reach the lab server: {loadError}</p></Frame>;
@@ -149,8 +150,8 @@ function Shell({ catalog, flows, setCatalog, tab, shownTab, theme, present, head
       <section id="panel" aria-labelledby={`tab-${shownTab}`}>
         <Panel key={catalog.vertical} app={app} />
       </section>
+      <TalkTrackDialog isOpen={head.talkActive} onClose={() => head.onTalk()} talk={talkStepsOf()} />
     </Frame>
   );
 }
-      <TalkTrackDialog isOpen={talkOpen} onClose={() => setTalkOpen(false)} talk={talkSteps} />
 
