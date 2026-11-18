@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { getCatalog, getModeInfo, postMode, resetLab } from "./lib/api.js";
 import Banner from "./components/Banner.jsx";
 import Header from "./components/Header.jsx";
+import TalkTrackDialog from "./talk-track/TalkTrackDialog.jsx";
+import talkMd from "../../docs/talk-track.md?raw";
 // Opened from Customer Agent LAB (UC-LOGIN and UC-LEARN16 route here): strip below the banner + header Back only; nothing is preselected.
 import ReturnLink from "./return-link/ReturnLink.jsx";
 import SignInTab, { useLogin } from "./tabs/SignInTab.jsx";
@@ -22,6 +24,7 @@ const tabFromHash = () => { const id = window.location.hash.replace(/^#\/?/, "")
 
 export default function App() {
   const [catalog, setCatalog] = useState(null);
+  const [talkOpen, setTalkOpen] = useState(false);
   const [flows, setFlows] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [tab, setTab] = useState(tabFromHash);
@@ -63,7 +66,15 @@ export default function App() {
 
   const setThemePersist = (v) => { setTheme(v); };
   const shownTab = present && tab === "raw" ? "signin" : tab; // the Raw tab is hidden in presenter mode
-  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), onNote: setModeNote, present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist, talkActive: tab === "talk", onTalk: () => { if (tab !== "talk") window.location.hash = "#/talk"; }, tabs: TABS, tab: shownTab, onTab: (id) => { window.location.hash = `#/${id}`; } };
+  const talkSteps = (() => {
+    const steps = []; let n = 0;
+    for (const line of talkMd.split("\n")) {
+      const m = line.match(/^\d+\.\s+(?:"(.+?)"|\*\*(.+?)\.\*\*\s*(.*))$/);
+      if (m) { n += 1; steps.push({ id: `s${n}`, title: (m[1] || m[2]).slice(0, 60), say: m[1] || m[3] }); }
+    }
+    return steps.length ? steps : [{ id: "s1", title: "Talk track", say: talkMd.slice(0, 600) }];
+  })();
+  const head = { modeInfo, onMock: () => switchMode("mock"), onLive: () => switchMode("real"), onNote: setModeNote, present, onPresent: () => setPresentMode(!present), theme, onTheme: setThemePersist, talkActive: talkOpen, onTalk: () => setTalkOpen((v) => !v), tabs: TABS, tab: shownTab, onTab: (id) => { window.location.hash = `#/${id}`; } };
 
   if (loadError) return <Frame head={head} modeNote={modeNote}><p className="alert" role="alert">Could not reach the lab server: {loadError}</p></Frame>;
   if (!catalog) return <Frame head={head} modeNote={modeNote}><p className="muted" role="status">Loading the mock…</p></Frame>;
@@ -141,3 +152,5 @@ function Shell({ catalog, flows, setCatalog, tab, shownTab, theme, present, head
     </Frame>
   );
 }
+      <TalkTrackDialog isOpen={talkOpen} onClose={() => setTalkOpen(false)} talk={talkSteps} />
+
