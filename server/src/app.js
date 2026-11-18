@@ -13,6 +13,7 @@ import { loadCustomerConfig } from './customerConfig.js';
 import { runScenario, runAll } from './runner.js';
 import { createDiagramsRouter } from './diagrams.js';
 import { shelfInfo } from './shelfLink.js';
+import { loadTalkTrack } from './talkTrack.js';
 
 const DEFAULT_WEB_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../web/dist');
 // Same shortening the trace uses (ASCII dots: a header value must be latin1), so the UI can show the rotating session-token cookie (it is HttpOnly, the page can not read it).
@@ -46,6 +47,7 @@ export function createApp({
   api.use(express.json({ limit: '8kb' }));
   api.use('/health', health.router);
   api.use('/diagrams', diagramsRouter);
+  api.get('/talk-track', (_req, res) => res.json({ talkTrack: loadTalkTrack() }));
   api.get('/catalog', (req, res) => {
     const v = getVertical(req.query.vertical || defaultVertical());
     if (!v) return bad(res, `unknown vertical ${inert(req.query.vertical)}`);
