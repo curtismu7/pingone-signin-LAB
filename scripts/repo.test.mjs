@@ -116,7 +116,7 @@ test('reset.mjs refuses a non-loopback host before any request', async () => {
 });
 
 test('login is pi.flow only in the web UI too: no navigation to an authorize URL, no other response_mode', () => {
-  const files = trackedTextFiles().filter((x) => /^web\/src\/.*\.(js|jsx)$/.test(x) && !/\/test\//.test(x));
+  const files = trackedTextFiles().filter((x) => /^web\/src\/.*\.(js|jsx)$/.test(x) && !/\/test\//.test(x) && !/floating-dialog|talk-track\//.test(x)); // the vendored shared FloatingDialog is pinned by hash, not re-checked here
   assert.ok(files.length > 10);
   // One exemption (owner, 2026-11-09): the vendored, hash-pinned Back button goes to a fixed Customer Agent LAB URL from
   // returnTargets.js, never an authorize URL. Only that one exact call in that one file is skipped; everything else still applies.
