@@ -99,6 +99,17 @@ input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 .phone__screen { min-height: 144px; padding: 12px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); }
 .phone__title { margin: 0; font-size: 17px; font-weight: 700; }
 .phone__code { margin: 6px 0; font-size: 17px; }
+/* iOS-style app dock at the bottom of the mock phone screen (decorative). */
+.phone__dock { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.dock__tile { display: grid; justify-items: center; gap: 3px; }
+.dock__glyph { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  font: 800 15px var(--font-mono); }
+.dock__tile--red .dock__glyph { background: var(--accent-gradient); border-color: transparent; color: var(--on-accent); }
+.dock__tile--blue .dock__glyph { background: var(--status-info); border-color: transparent; color: #fff; }
+.dock__tile--green .dock__glyph { background: var(--status-ok); border-color: transparent; color: #fff; }
+.dock__label { font-size: 9px; color: var(--muted); max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) { .phone__dock { gap: 6px; } .dock__glyph { width: 30px; height: 30px; } }
 
 .scenarios { list-style: none; margin: 0; padding: 0; }
 .scenario__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
