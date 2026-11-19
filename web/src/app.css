@@ -97,7 +97,11 @@ input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 /* Mock phone with iPhone chrome: tall bezel, Dynamic Island, status bar, home indicator. */
 .phone { margin-bottom: 16px; width: 300px; padding: 10px; border: 3px solid var(--border); border-radius: 44px; background: var(--box-dark, #051727); box-shadow: 0 10px 28px var(--shadow-ink, rgb(0 0 0 / 0.2)); }
 .phone__tag { margin: 0 0 6px; text-align: center; font-size: 13px; color: var(--muted); }
-.phone__screen { display: flex; flex-direction: column; min-height: 420px; padding: 0 10px 8px; border-radius: 34px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+.phone__screen { display: flex; flex-direction: column; min-height: 420px; padding: 0 10px 8px; border-radius: 34px; background: var(--box-dark, #051727); color: var(--on-box, #fcfcfc); border: 1px solid var(--border); overflow: hidden; }
+.phone__screen .muted { color: var(--on-box, #fcfcfc); opacity: 0.75; }
+.phone__screen .small { color: var(--on-box, #fcfcfc); }
+.phone__screen .alert { background: rgb(255 255 255 / 0.08); color: var(--on-box, #fcfcfc); }
+.phone__screen code { background: rgb(255 255 255 / 0.1); }
 .phone__island { height: 22px; margin: 8px auto 2px; width: 84px; border-radius: 999px; background: var(--box-dark, #051727); }
 .phone__statusbar { display: flex; justify-content: space-between; align-items: center; padding: 0 10px 6px; font: 600 11px var(--font-mono); color: var(--text); }
 .phone__body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 2px; }
