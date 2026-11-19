@@ -4,6 +4,7 @@ import { cibaPoll, cibaStart, phoneDecide, phonePending } from "../lib/ciba.js";
 import { decodeJwt } from "../lib/jwt.js";
 import { Inert } from "../lib/Inert.jsx";
 import { Mock, Pill, TokenView, TraceList, Unverified, Btn } from "../components/ui.jsx";
+import Phone from "../phone/Phone.jsx";
 
 const TERMINAL = new Set(["approved", "denied", "expired"]);
 const INIT = { req: null, poll: { state: "idle", message: "", count: 0 }, interval: 5, result: null, error: null, busy: false, phoneAction: null, phoneError: null };
@@ -68,11 +69,9 @@ function MockPhone({ ciba }) {
   }, [hint, s.req, s.phoneAction, s.poll.state]);
   const n = pending[0];
   return (
-    <section className="phone" aria-label="Mock phone" data-testid="phone">
+    <Phone open label="Mock phone" testId="phone" storageKey="signin.ciba.phone">
       <p className="phone__tag"><Mock>MOCK PHONE</Mock> stands in for the user's device</p>
       <div className="phone__screen">
-        <div className="phone__island" aria-hidden="true"></div>
-        <div className="phone__statusbar" aria-hidden="true"><span>9:41</span><span>▮▮▮ wifi batt</span></div>
         <div className="phone__body">
         {s.phoneAction ? (
           <p role="status" data-testid="phone-result">You tapped <strong>{s.phoneAction === "approve" ? "Approve" : "Deny"}</strong>.</p>
@@ -112,7 +111,7 @@ function MockPhone({ ciba }) {
         </div>
         <div className="phone__homebar" aria-hidden="true"></div>
       </div>
-    </section>
+    </Phone>
   );
 }
 
