@@ -3,7 +3,7 @@
 Date: 2026-11-19
 Repo: `curtismu7/pingone-signin-LAB`
 Branch: **`chore/phone-app-dock`** — 3 commits, **PR #20 open, NOT merged**
-Live at: `https://local.ping-devops.com:8443/pingone-signin-lab#/ciba` (container rebuilt from the branch, serving now)
+Live at: the CIBA tab: http://localhost:6171/#/ciba locally, or the family lab-proxy path for this lab
 
 ## What was done
 
@@ -42,5 +42,5 @@ cd ~/Development/AI-DEMO-Standalone/standalone/pingone-signin-LAB
 git checkout chore/phone-app-dock
 npx vitest run   # in web/ for tests
 docker compose -f docker-compose.yml up -d --build
-open https://local.ping-devops.com:8443/pingone-signin-lab#/ciba
+open http://localhost:6171/#/ciba
 ```
