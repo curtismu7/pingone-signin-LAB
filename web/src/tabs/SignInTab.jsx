@@ -78,7 +78,7 @@ export default function SignInTab({ app }) {
   return (
     <div className="split">
       <div>
-        <h2>Sign in with pi.flow</h2>
+        <h2 data-n="1">Sign in with pi.flow</h2>
         <p className="lede">A real embedded form, driven one request at a time against the live mock. The page plays the BFF: it keeps the PKCE verifier and sends the session-token cookie. There is no redirect to a hosted login page.</p>
 
         <section className="card" aria-label="Why pi.flow">
