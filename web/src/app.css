@@ -117,7 +117,7 @@ input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 .dock__tile--red .dock__glyph { background: var(--accent-gradient); border-color: transparent; color: var(--on-accent); }
 .dock__tile--blue .dock__glyph { background: var(--status-info); border-color: transparent; color: #fff; }
 .dock__tile--green .dock__glyph { background: var(--status-ok); border-color: transparent; color: #fff; }
-.dock__label { font-size: 9px; color: var(--muted); max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock__label { font-size: 10px; color: var(--muted); max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .phone { width: 100%; max-width: 320px; margin-inline: auto; } .phone__dock { gap: 6px; } .dock__glyph { width: 30px; height: 30px; } }
 
 .scenarios { list-style: none; margin: 0; padding: 0; }
