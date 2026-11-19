@@ -40,6 +40,9 @@ input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 .deny { border-color: var(--danger-text); color: var(--danger-text); }
 
 .split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+h2[data-n]::before { content: attr(data-n); display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem;
+  border-radius: 999px; background: var(--accent-gradient); color: var(--on-accent); font: 700 0.75rem var(--font-mono);
+  margin-right: 0.5em; vertical-align: 2px; }
 @media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }
 .card { padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .alert { padding: 10px 12px; border-radius: 6px; background: var(--accent-soft); color: var(--danger-text); border: 1px solid var(--danger-text); margin: 8px 0; }
@@ -94,31 +97,29 @@ input:disabled, select:disabled { opacity: 0.75; cursor: not-allowed; }
 .trace__n { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 999px; background: var(--text); color: var(--bg); font-family: var(--font-mono); font-size: 12px; font-weight: 700; flex: none; }
 .trace__title { flex: 1; min-width: 0; font-size: 14px; }
 
-/* Mock phone with iPhone chrome: tall bezel, Dynamic Island, status bar, home indicator. */
-.phone { margin-bottom: 16px; width: 300px; padding: 10px; border: 3px solid var(--border); border-radius: 44px; background: var(--box-dark); box-shadow: 0 10px 28px var(--shadow-ink); }
-.phone__tag { margin: 0 0 6px; text-align: center; font-size: 13px; color: var(--muted); }
-.phone__screen { display: flex; flex-direction: column; min-height: 420px; padding: 0 10px 8px; border-radius: 34px; background: var(--box-dark); color: var(--on-box); border: 1px solid var(--border); overflow: hidden; }
-.phone__screen .muted { color: var(--on-box); opacity: 0.75; }
-.phone__screen .small { color: var(--on-box); }
-.phone__screen .alert { background: var(--surface-2); color: var(--on-box); }
-.phone__screen code { background: var(--surface-2); }
-.phone__island { height: 22px; margin: 8px auto 2px; width: 84px; border-radius: 999px; background: var(--box-dark); }
-.phone__statusbar { display: flex; justify-content: space-between; align-items: center; padding: 0 10px 6px; font: 600 11px var(--font-mono); color: var(--text); }
-.phone__body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 2px; }
+/* Mock phone content (the window itself is the shared phone standard, web/src/phone):
+   on-device text and dock read against the fixed-dark screen, never the page theme. */
+.phone__tag { margin: 0 0 6px; text-align: center; font-size: 13px; color: var(--on-box); opacity: 0.75; }
+.phone-screen .muted { color: var(--on-box); opacity: 0.75; }
+.phone-screen .small { color: var(--on-box); }
+.phone-screen .alert { background: color-mix(in srgb, var(--on-box) 14%, transparent); color: var(--on-box); }
+.phone-screen code { background: color-mix(in srgb, var(--on-box) 10%, transparent); }
 .phone__title { margin: 0; font-size: 17px; font-weight: 700; }
 .phone__code { margin: 6px 0; font-size: 17px; }
-.phone__homebar { height: 4px; margin: 8px auto 2px; width: 96px; border-radius: 999px; background: var(--muted); }
+.phone-screen .primary { background: var(--accent-gradient); color: var(--on-accent); }
+.phone-screen .deny { border: 1px solid color-mix(in srgb, var(--on-box) 35%, transparent); background: color-mix(in srgb, var(--on-box) 18%, transparent); color: var(--on-box); }
+.phone-screen .actions { background: transparent; border: 0; padding: 0; }
 /* iOS-style app dock at the bottom of the mock phone screen (decorative). */
 .phone__dock { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: auto; padding: 10px 4px 4px; }
 .dock__tile { display: grid; justify-items: center; gap: 3px; }
 .dock__glyph { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  background: color-mix(in srgb, var(--on-box) 18%, transparent); border: 1px solid color-mix(in srgb, var(--on-box) 35%, transparent); color: var(--on-box);
   font: 800 15px var(--font-mono); }
 .dock__tile--red .dock__glyph { background: var(--accent-gradient); border-color: transparent; color: var(--on-accent); }
 .dock__tile--blue .dock__glyph { background: var(--status-info); border-color: transparent; color: var(--on-accent); }
 .dock__tile--green .dock__glyph { background: var(--status-ok); border-color: transparent; color: var(--on-accent); }
-.dock__label { font-size: 10px; color: var(--muted); max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 900px) { .phone { width: 100%; max-width: 320px; margin-inline: auto; } .phone__dock { gap: 6px; } .dock__glyph { width: 30px; height: 30px; } }
+.dock__label { font-size: 10px; color: var(--on-box); opacity: 0.75; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) { .phone__dock { gap: 6px; } .dock__glyph { width: 30px; height: 30px; } }
 
 .scenarios { list-style: none; margin: 0; padding: 0; }
 .scenario__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
