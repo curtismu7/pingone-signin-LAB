@@ -71,6 +71,9 @@ function MockPhone({ ciba }) {
     <section className="phone" aria-label="Mock phone" data-testid="phone">
       <p className="phone__tag"><Mock>MOCK PHONE</Mock> stands in for the user's device</p>
       <div className="phone__screen">
+        <div className="phone__island" aria-hidden="true"></div>
+        <div className="phone__statusbar" aria-hidden="true"><span>9:41</span><span>▮▮▮ wifi batt</span></div>
+        <div className="phone__body">
         {s.phoneAction ? (
           <p role="status" data-testid="phone-result">You tapped <strong>{s.phoneAction === "approve" ? "Approve" : "Deny"}</strong>.</p>
         ) : n ? (
@@ -93,6 +96,7 @@ function MockPhone({ ciba }) {
           </div>
         )}
         {s.phoneError && <p className="alert" role="alert" data-testid="phone-error"><Inert text={s.phoneError} /></p>}
+        </div>
         <div className="phone__dock" aria-label="Phone apps (decorative)">
           {[
             { n: "PingOne", c: "dock__tile--red" },
@@ -106,6 +110,7 @@ function MockPhone({ ciba }) {
             </div>
           ))}
         </div>
+        <div className="phone__homebar" aria-hidden="true"></div>
       </div>
     </section>
   );
