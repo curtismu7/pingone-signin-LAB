@@ -61,6 +61,7 @@ h2[data-n]::before { content: attr(data-n); display: inline-grid; place-items: c
 
 .badge { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; vertical-align: middle; border: 1px solid; }
 .badge--mock { background: var(--surface-2); color: var(--status-info); border-color: var(--status-info); }
+.phone-screen .badge--mock { background: color-mix(in srgb, var(--on-box) 14%, transparent); color: var(--on-box); border-color: var(--on-box); }
 .badge--unv { background: var(--surface-2); color: var(--status-warn); border-color: var(--status-warn); }
 .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 13px; font-weight: 700; margin-left: 4px; border: 1px solid; }
 .pill--ok { background: var(--surface-2); color: var(--status-ok); border-color: var(--status-ok); }
